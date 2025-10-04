@@ -169,7 +169,7 @@ export default function PracticeScreen() {
         </ThemedText>
 
         {question.options.map((option, index) => {
-          let optionStyle = [styles.option];
+          let optionStyle = [styles.option, { backgroundColor: Colors[currentScheme].cardBackground }];
           
           if (isAnswered) {
             if (index === question.correctAnswer) {
@@ -196,7 +196,7 @@ export default function PracticeScreen() {
         })}
 
         {showExplanation && question.explanation && (
-          <ThemedView style={styles.explanationContainer}>
+          <ThemedView style={[styles.explanationContainer, { backgroundColor: isDark ? '#374151' : '#FFFBEB' }]}>
             <ThemedText type="defaultSemiBold" style={styles.explanationTitle}>
               Explanation:
             </ThemedText>
@@ -272,22 +272,18 @@ const styles = StyleSheet.create({
   option: {
     padding: 16,
     marginBottom: 12,
-    backgroundColor: '#f5f5f5',
     borderRadius: 8,
     borderWidth: 2,
     borderColor: 'transparent',
   },
   selectedOption: {
     borderColor: '#F59E0B',
-    backgroundColor: '#FFFBEB',
   },
   correctOption: {
     borderColor: '#16A34A',
-    backgroundColor: '#F0FDF4',
   },
   incorrectOption: {
     borderColor: '#DC2626',
-    backgroundColor: '#FEF2F2',
   },
   optionText: {
     fontSize: 16,
@@ -295,7 +291,6 @@ const styles = StyleSheet.create({
   explanationContainer: {
     marginTop: 20,
     padding: 16,
-    backgroundColor: '#FFFBEB',
     borderRadius: 8,
     borderLeftWidth: 4,
     borderLeftColor: '#F59E0B',

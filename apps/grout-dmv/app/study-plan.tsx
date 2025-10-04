@@ -6,6 +6,8 @@ import { ThemedView } from '@/components/themed-view';
 import { AppHeader } from '@/components/app-header';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '@/contexts/theme-context';
+import { Colors } from '@/constants/theme';
 
 interface StudyPlanDay {
   day: number;
@@ -21,6 +23,8 @@ interface StudyPlanDay {
 const STUDY_PLAN_KEY = 'dmv_study_plan';
 
 export default function StudyPlanScreen() {
+  const { isDark } = useTheme();
+  const currentScheme = isDark ? 'dark' : 'light';
   const [studyPlan, setStudyPlan] = useState<StudyPlanDay[]>([]);
   const [currentDay, setCurrentDay] = useState(1);
   const [overallProgress, setOverallProgress] = useState(0);
@@ -271,7 +275,7 @@ export default function StudyPlanScreen() {
 
 
       {/* Progress Overview */}
-      <ThemedView style={styles.progressSection}>
+      <ThemedView style={[styles.progressSection, { backgroundColor: Colors[currentScheme].cardBackground }]}>
         <ThemedView style={styles.progressHeader}>
           <ThemedText type="subtitle">Overall Progress</ThemedText>
           <TouchableOpacity onPress={resetStudyPlan} style={styles.resetButton}>
@@ -312,6 +316,7 @@ export default function StudyPlanScreen() {
         {studyPlan.map((day, dayIndex) => (
           <ThemedView key={day.day} style={[
             styles.dayCard,
+            { backgroundColor: Colors[currentScheme].cardBackground },
             day.completed && styles.completedDayCard,
             day.day === currentDay && styles.currentDayCard
           ]}>
@@ -477,12 +482,10 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   completedDayCard: {
-    backgroundColor: '#f8fff8',
     borderColor: '#4CAF50',
   },
   currentDayCard: {
     borderColor: '#FF9800',
-    backgroundColor: '#fff8f0',
   },
   dayHeader: {
     flexDirection: 'row',

@@ -102,7 +102,7 @@ export default function ExploreScreen() {
         <ThemedText type="subtitle" style={styles.sectionTitle}>Your Journey</ThemedText>
         <ThemedView style={styles.statsGrid}>
           {quickStats.map((stat, index) => (
-            <ThemedView key={index} style={[styles.statCard, { backgroundColor: Colors[currentScheme].cardBackground }]}>
+            <ThemedView key={index} style={[styles.statCard]}>
               <Ionicons name={stat.icon as any} size={20} color={stat.color} />
               <ThemedText style={[styles.statValue, { color: stat.color }]}>{stat.value}</ThemedText>
               <ThemedText style={[styles.statLabel, { opacity: 0.7 }]}>{stat.label}</ThemedText>
@@ -118,7 +118,7 @@ export default function ExploreScreen() {
           {features.map((feature) => (
             <TouchableOpacity
               key={feature.id}
-              style={[styles.featureCard, { borderLeftColor: feature.color, backgroundColor: Colors[currentScheme].cardBackground }]}
+              style={[styles.featureCard, { borderLeftColor: feature.color}]}
               onPress={feature.action}
               activeOpacity={0.7}
             >

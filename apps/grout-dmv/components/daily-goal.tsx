@@ -4,6 +4,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '@/contexts/theme-context';
+import { Colors } from '@/constants/theme';
 
 interface DailyGoalProps {
   onGoalComplete?: () => void;
@@ -13,6 +15,8 @@ const DAILY_GOAL_KEY = 'dmv_daily_goal';
 const GOAL_DATE_KEY = 'dmv_goal_date';
 
 export function DailyGoal({ onGoalComplete }: DailyGoalProps) {
+  const { isDark } = useTheme();
+  const currentScheme = isDark ? 'dark' : 'light';
   const [questionsAnswered, setQuestionsAnswered] = useState(0);
   const [dailyGoal] = useState(20); // Daily goal of 20 questions
   const [isCompleted, setIsCompleted] = useState(false);
@@ -74,7 +78,7 @@ export function DailyGoal({ onGoalComplete }: DailyGoalProps) {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { backgroundColor: Colors[currentScheme].cardBackground }]}>
       <ThemedView style={styles.header}>
         <ThemedView style={styles.titleContainer}>
           <Ionicons name="target" size={20} color={getProgressColor()} />
@@ -133,7 +137,6 @@ export const updateDailyGoalProgress = async (questionsAnswered: number) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
     padding: 16,
     borderRadius: 12,
     margin: 16,

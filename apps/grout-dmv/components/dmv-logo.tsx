@@ -72,88 +72,88 @@ export function RoadReadyLogo({ size = 40 }: { size?: number }) {
   });
 
   return (
-    <View style={[styles.container, { width: size * 4, height: size }]}>
+    <View style={[styles.container, { width: size * 3.5, height: size }]}>
       <View style={[styles.logoScene, { 
-        width: size * 1.2, 
+        width: size, 
         height: size,
         backgroundColor: containerBg
       }]}>
         {/* Road Base */}
         <View style={[styles.road, { 
-          width: size * 1.2, 
-          height: size * 0.3,
+          width: size, 
+          height: size * 0.25,
           bottom: 0,
           backgroundColor: roadColor
         }]}>
           <View style={[styles.roadLine, { 
-            width: size * 0.8, 
-            height: size * 0.04,
+            width: size * 0.7, 
+            height: Math.max(size * 0.03, 2),
             backgroundColor: roadLineColor
           }]} />
         </View>
         
         {/* Traffic Light */}
         <View style={[styles.trafficLight, { 
-          width: size * 0.25, 
-          height: size * 0.7,
-          right: size * 0.1,
-          top: size * 0.05,
-          borderRadius: size * 0.03,
+          width: size * 0.2, 
+          height: size * 0.6,
+          right: size * 0.08,
+          top: size * 0.1,
+          borderRadius: Math.max(size * 0.02, 2),
           backgroundColor: trafficLightColor
         }]}>
           <Animated.View style={[styles.lightRed, animatedRedLight, { 
-            width: size * 0.12, 
-            height: size * 0.12,
-            borderRadius: size * 0.06 
+            width: size * 0.1, 
+            height: size * 0.1,
+            borderRadius: size * 0.05 
           }]} />
           <Animated.View style={[styles.lightYellow, animatedYellowLight, { 
-            width: size * 0.12, 
-            height: size * 0.12,
-            borderRadius: size * 0.06 
+            width: size * 0.1, 
+            height: size * 0.1,
+            borderRadius: size * 0.05 
           }]} />
           <Animated.View style={[styles.lightGreen, animatedGreenLight, { 
-            width: size * 0.12, 
-            height: size * 0.12,
-            borderRadius: size * 0.06 
+            width: size * 0.1, 
+            height: size * 0.1,
+            borderRadius: size * 0.05 
           }]} />
         </View>
         
         {/* Motorbike */}
         <Animated.View style={[styles.motorbike, animatedBikeStyle, { 
-          width: size * 0.35, 
-          height: size * 0.18,
-          left: size * 0.15,
-          bottom: size * 0.3 
+          width: size * 0.3, 
+          height: size * 0.15,
+          left: size * 0.1,
+          bottom: size * 0.25 
         }]}>
           <View style={[styles.bikeBody, { 
-            width: size * 0.25, 
-            height: size * 0.08,
-            borderRadius: size * 0.04,
-            top: size * 0.05,
+            width: size * 0.2, 
+            height: size * 0.06,
+            borderRadius: size * 0.03,
+            top: size * 0.04,
             backgroundColor: bikeBodyColor
           }]} />
           <View style={[styles.bikeWheel, { 
-            width: size * 0.1, 
-            height: size * 0.1,
-            borderRadius: size * 0.05,
-            left: size * 0.02,
+            width: size * 0.08, 
+            height: size * 0.08,
+            borderRadius: size * 0.04,
+            left: size * 0.015,
             bottom: 0,
             backgroundColor: bikeWheelColor
           }]} />
           <View style={[styles.bikeWheel, { 
-            width: size * 0.1, 
-            height: size * 0.1,
-            borderRadius: size * 0.05,
-            right: size * 0.02,
+            width: size * 0.08, 
+            height: size * 0.08,
+            borderRadius: size * 0.04,
+            right: size * 0.015,
             bottom: 0,
             backgroundColor: bikeWheelColor
           }]} />
           <View style={[styles.rider, { 
-            width: size * 0.06, 
-            height: size * 0.12,
-            borderRadius: size * 0.03,
-            left: size * 0.12,
-            top: -size * 0.02,
+            width: size * 0.05, 
+            height: size * 0.1,
+            borderRadius: size * 0.025,
+            left: size * 0.1,
+            top: -size * 0.015,
             backgroundColor: riderColor
           }]} />
         </Animated.View>
@@ -161,14 +161,14 @@ export function RoadReadyLogo({ size = 40 }: { size?: number }) {
       
       <View style={styles.textContainer}>
         <Text style={[styles.title, { 
-          fontSize: size * 0.28,
+          fontSize: Math.max(size * 0.22, 16),
           fontWeight: 'bold',
           color: titleColor
         }]}>
           RoadReady
         </Text>
         <Text style={[styles.subtitle, { 
-          fontSize: size * 0.16,
+          fontSize: Math.max(size * 0.12, 12),
           color: subtitleColor
         }]}>
           DMV Test Prep
@@ -182,11 +182,11 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
   logoScene: {
     position: 'relative',
-    borderRadius: 8,
+    borderRadius: 6,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -287,19 +287,16 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     justifyContent: 'center',
-    borderRadius: 8,
-
+    flex: 1,
   },
   title: {
-    lineHeight: 16,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
+    lineHeight: undefined,
   },
   subtitle: {
-    borderRadius: 8,
-
-    lineHeight: 12,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
     textAlign: 'center',
     marginTop: 2,
+    lineHeight: undefined,
   },
 });

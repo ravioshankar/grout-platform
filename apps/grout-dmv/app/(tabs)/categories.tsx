@@ -70,14 +70,12 @@ export default function CategoriesScreen() {
     >
       <ThemedView style={[styles.categoryContent, { backgroundColor: Colors[currentScheme].cardBackground, borderColor: isDark ? '#374151' : '#e9ecef' }]}>
         <ThemedText style={styles.icon}>{item.icon}</ThemedText>
-        <ThemedView style={styles.textContainer}>
           <ThemedText type="defaultSemiBold" style={styles.title}>
             {item.title}
           </ThemedText>
           <ThemedText style={[styles.description, { opacity: 0.7 }]}>
             {item.description}
           </ThemedText>
-        </ThemedView>
       </ThemedView>
     </TouchableOpacity>
   );

@@ -25,14 +25,14 @@ export const Colors = {
   },
   dark: {
     text: '#F9FAFB',
-    background: '#0F172A',
-    cardBackground: '#1E293B',
+    background: '#1F2937',
+    cardBackground: '#374151',
     tint: trafficGreen,
     icon: '#CBD5E1',
     tabIconDefault: '#64748B',
     tabIconSelected: trafficGreen,
     link: '#60A5FA',
-    border: '#334155',
+    border: '#4B5563',
     shadow: 'rgba(0, 0, 0, 0.3)',
   },
 };

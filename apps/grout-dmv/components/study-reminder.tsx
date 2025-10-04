@@ -4,6 +4,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '@/contexts/theme-context';
+import { Colors } from '@/constants/theme';
 
 interface StudyReminderProps {
   onStartStudy: () => void;
@@ -13,6 +15,8 @@ const REMINDER_KEY = 'dmv_study_reminder';
 const LAST_STUDY_KEY = 'dmv_last_study_date';
 
 export function StudyReminder({ onStartStudy }: StudyReminderProps) {
+  const { isDark } = useTheme();
+  const currentScheme = isDark ? 'dark' : 'light';
   const [showReminder, setShowReminder] = useState(false);
   const [daysSinceLastStudy, setDaysSinceLastStudy] = useState(0);
   const [currentStreak, setCurrentStreak] = useState(0);
@@ -100,7 +104,7 @@ export function StudyReminder({ onStartStudy }: StudyReminderProps) {
 
 
   return (
-    <ThemedView style={[styles.reminderCard, { borderLeftColor: reminderColor }]}>
+    <ThemedView style={[styles.reminderCard, { borderLeftColor: reminderColor, backgroundColor: Colors[currentScheme].cardBackground }]}>
       <ThemedView style={styles.reminderHeader}>
         <Ionicons name={reminderIcon} size={24} color={reminderColor} />
         <ThemedView style={styles.reminderInfo}>
@@ -142,7 +146,6 @@ export function StudyReminder({ onStartStudy }: StudyReminderProps) {
 
 const styles = StyleSheet.create({
   reminderCard: {
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     margin: 16,

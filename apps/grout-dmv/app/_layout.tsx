@@ -29,7 +29,7 @@ const headerStyle = {
 };
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  initialRouteName: 'splash',
 };
 
 export default function RootLayout() {
@@ -58,6 +58,7 @@ export default function RootLayout() {
     <AppThemeProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
+          <Stack.Screen name="splash" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="setup" options={{ ...headerStyle, title: 'Setup Test' }} />
           <Stack.Screen name="test/[state]" options={{ ...headerStyle, title: 'DMV Test' }} />

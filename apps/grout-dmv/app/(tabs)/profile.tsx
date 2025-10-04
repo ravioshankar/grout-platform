@@ -141,7 +141,7 @@ export default function ProfileScreen() {
         ) : (
           testResults.slice(0, 5).map((result, index) => (
             <ThemedView key={result.id} style={[styles.testItem, { backgroundColor: Colors[currentScheme].cardBackground }]}>
-              <ThemedView style={styles.testInfo}>
+              <ThemedView >
                 <ThemedText type="defaultSemiBold">{result.testType === 'full-test' ? 'Full Test' : 'Practice'}</ThemedText>
                 <ThemedText style={styles.testDetails}>
                   {result.stateCode} • {result.category} • {new Date(result.completedAt).toLocaleDateString()}
