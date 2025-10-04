@@ -20,7 +20,12 @@ export default function BookmarksScreen() {
     try {
       const bookmarks = await AsyncStorage.getItem(BOOKMARKS_KEY);
       if (bookmarks) {
-        setBookmarkedQuestions(JSON.parse(bookmarks));
+        try {
+          setBookmarkedQuestions(JSON.parse(bookmarks));
+        } catch (parseError) {
+          console.error('Error parsing bookmarks JSON:', parseError);
+          setBookmarkedQuestions([]);
+        }
       }
     } catch (error) {
       console.error('Error loading bookmarks:', error);

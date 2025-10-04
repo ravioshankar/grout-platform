@@ -49,60 +49,64 @@ export const saveNotificationSettings = async (settings: NotificationSettings): 
 };
 
 export const scheduleNotifications = async (settings: NotificationSettings): Promise<void> => {
-  // Cancel all existing notifications
-  await Notifications.cancelAllScheduledNotificationsAsync();
-  
-  const hasPermission = await requestNotificationPermissions();
-  if (!hasPermission) return;
+  try {
+    // Cancel all existing notifications
+    await Notifications.cancelAllScheduledNotificationsAsync();
+    
+    const hasPermission = await requestNotificationPermissions();
+    if (!hasPermission) return;
 
-  const [hour, minute] = settings.reminderTime.split(':').map(Number);
+    const [hour, minute] = settings.reminderTime.split(':').map(Number);
 
-  // Daily practice reminder
-  if (settings.dailyReminder) {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: '🚗 DMV Practice Time!',
-        body: 'Take a few minutes to practice for your DMV test today.',
-        sound: true,
-      },
-      trigger: {
-        hour,
-        minute,
-        repeats: true,
-      },
-    });
-  }
+    // Daily practice reminder
+    if (settings.dailyReminder) {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🚗 DMV Practice Time!',
+          body: 'Take a few minutes to practice for your DMV test today.',
+          sound: true,
+        },
+        trigger: {
+          hour,
+          minute,
+          repeats: true,
+        },
+      });
+    }
 
-  // Weekly progress reminder
-  if (settings.weeklyProgress) {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: '📊 Weekly Progress Check',
-        body: 'See how you\'ve improved this week and identify areas to focus on.',
-        sound: true,
-      },
-      trigger: {
-        weekday: 1, // Monday
-        hour,
-        minute,
-        repeats: true,
-      },
-    });
-  }
+    // Weekly progress reminder
+    if (settings.weeklyProgress) {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '📊 Weekly Progress Check',
+          body: 'See how you\'ve improved this week and identify areas to focus on.',
+          sound: true,
+        },
+        trigger: {
+          weekday: 1, // Monday
+          hour,
+          minute,
+          repeats: true,
+        },
+      });
+    }
 
-  // Test reminder (3 days after last practice)
-  if (settings.testReminder) {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: '🎯 Ready for the Real Test?',
-        body: 'You\'ve been practicing well! Consider taking a full DMV test.',
-        sound: true,
-      },
-      trigger: {
-        seconds: 3 * 24 * 60 * 60, // 3 days
-        repeats: false,
-      },
-    });
+    // Test reminder (3 days after last practice)
+    if (settings.testReminder) {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🎯 Ready for the Real Test?',
+          body: 'You\'ve been practicing well! Consider taking a full DMV test.',
+          sound: true,
+        },
+        trigger: {
+          seconds: 3 * 24 * 60 * 60, // 3 days
+          repeats: false,
+        },
+      });
+    }
+  } catch (error) {
+    console.error('Error scheduling notifications:', error);
   }
 };
 

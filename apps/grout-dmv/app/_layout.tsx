@@ -36,8 +36,22 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   useEffect(() => {
-    syncService.initialize();
-    return () => syncService.stop();
+    const initializeSync = async () => {
+      try {
+        await syncService.initialize();
+      } catch (error) {
+        console.error('Failed to initialize sync service:', error);
+      }
+    };
+    
+    initializeSync();
+    return () => {
+      try {
+        syncService.stop();
+      } catch (error) {
+        console.error('Failed to stop sync service:', error);
+      }
+    };
   }, []);
 
   return (

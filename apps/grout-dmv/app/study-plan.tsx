@@ -33,9 +33,16 @@ export default function StudyPlanScreen() {
     try {
       const saved = await AsyncStorage.getItem(STUDY_PLAN_KEY);
       if (saved) {
-        const plan = JSON.parse(saved);
-        setStudyPlan(plan);
-        calculateProgress(plan);
+        try {
+          const plan = JSON.parse(saved);
+          setStudyPlan(plan);
+          calculateProgress(plan);
+        } catch (parseError) {
+          console.error('Error parsing study plan data:', parseError);
+          const defaultPlan = generateStudyPlan();
+          setStudyPlan(defaultPlan);
+          await AsyncStorage.setItem(STUDY_PLAN_KEY, JSON.stringify(defaultPlan));
+        }
       } else {
         const defaultPlan = generateStudyPlan();
         setStudyPlan(defaultPlan);

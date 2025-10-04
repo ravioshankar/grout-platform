@@ -162,18 +162,27 @@ export const syncWithBackend = async (): Promise<{ synced: number; failed: numbe
 };
 
 export const getUnsyncedCount = async (): Promise<number> => {
-  const submissions = await getSubmissions();
-  return submissions.filter(s => !s.synced).length;
+  try {
+    const submissions = await getSubmissions();
+    return submissions.filter(s => !s.synced).length;
+  } catch (error) {
+    console.error('Error getting unsynced count:', error);
+    return 0;
+  }
 };
 
 export const clearSyncedData = async (): Promise<void> => {
-  const submissions = await getSubmissions();
-  const unsyncedSubmissions = submissions.filter(s => !s.synced);
-  await AsyncStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(unsyncedSubmissions));
+  try {
+    const submissions = await getSubmissions();
+    const unsyncedSubmissions = submissions.filter(s => !s.synced);
+    await AsyncStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(unsyncedSubmissions));
+  } catch (error) {
+    console.error('Error clearing synced data:', error);
+  }
 };
 
-export const initPeriodicSync = () => {
-  setInterval(async () => {
+export const initPeriodicSync = (): NodeJS.Timeout => {
+  return setInterval(async () => {
     const config = await getSyncConfig();
     if (config.autoSync) {
       await syncWithBackend();
@@ -184,12 +193,20 @@ export const initPeriodicSync = () => {
 const getSyncConfig = async (): Promise<SyncConfig> => {
   try {
     const config = await AsyncStorage.getItem(SYNC_CONFIG_KEY);
-    return config ? JSON.parse(config) : {
+    if (config) {
+      try {
+        return JSON.parse(config);
+      } catch (parseError) {
+        console.error('Error parsing sync config:', parseError);
+      }
+    }
+    return {
       lastSyncTime: new Date(0),
       syncInterval: 30,
       autoSync: true,
     };
   } catch (error) {
+    console.error('Error loading sync config:', error);
     return {
       lastSyncTime: new Date(0),
       syncInterval: 30,

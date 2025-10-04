@@ -84,44 +84,48 @@ export default function PracticeScreen() {
         testType: 'practice',
       };
       
-      await saveTestResult(testResult);
-      
-      // Submit to database
-      const metadata: TestMetadata = {
-        appVersion: '1.0.0',
-        platform: Platform.OS as 'ios' | 'android',
-        deviceInfo: {
-          screenSize: `${Dimensions.get('window').width}x${Dimensions.get('window').height}`,
-        },
-        sessionId: `session_${startTime}`,
-        testDuration: timeSpent,
-        pauseCount: 0,
-        hintsUsed: 0,
-      };
-      
-      const analytics: TestAnalytics = {
-        questionTimings,
-        answerChanges: new Array(questions.length).fill(0),
-        struggledQuestions: questions.filter((_, i) => !isCorrect[i]).map(q => q.id),
-        confidenceScores: new Array(questions.length).fill(3),
-        categoryPerformance: [{
-          category: category as QuestionCategory || 'road-signs',
-          score: Math.round((score / questions.length) * 100),
-          timeSpent,
-          questionsCount: questions.length,
-          averageConfidence: 3,
-        }],
-      };
-      
-      await submitTestResult(testResult, metadata, analytics);
-      
-      // Update study progress
-      await updateStudyProgress(category as string, questions.length);
-      await updateStudyStreak();
-      
-      // Update daily goal
-      const { updateDailyGoalProgress } = await import('@/components/daily-goal');
-      await updateDailyGoalProgress(questions.length);
+      try {
+        await saveTestResult(testResult);
+        
+        // Submit to database
+        const metadata: TestMetadata = {
+          appVersion: '1.0.0',
+          platform: Platform.OS as 'ios' | 'android',
+          deviceInfo: {
+            screenSize: `${Dimensions.get('window').width}x${Dimensions.get('window').height}`,
+          },
+          sessionId: `session_${startTime}`,
+          testDuration: timeSpent,
+          pauseCount: 0,
+          hintsUsed: 0,
+        };
+        
+        const analytics: TestAnalytics = {
+          questionTimings,
+          answerChanges: new Array(questions.length).fill(0),
+          struggledQuestions: questions.filter((_, i) => !isCorrect[i]).map(q => q.id),
+          confidenceScores: new Array(questions.length).fill(3),
+          categoryPerformance: [{
+            category: category as QuestionCategory || 'road-signs',
+            score: Math.round((score / questions.length) * 100),
+            timeSpent,
+            questionsCount: questions.length,
+            averageConfidence: 3,
+          }],
+        };
+        
+        await submitTestResult(testResult, metadata, analytics);
+        
+        // Update study progress
+        await updateStudyProgress(category as string, questions.length);
+        await updateStudyStreak();
+        
+        // Update daily goal
+        const { updateDailyGoalProgress } = await import('@/components/daily-goal');
+        await updateDailyGoalProgress(questions.length);
+      } catch (error) {
+        console.error('Error saving practice results:', error);
+      }
       
       Alert.alert(
         'Practice Complete!',

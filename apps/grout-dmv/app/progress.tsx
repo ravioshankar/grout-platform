@@ -22,33 +22,37 @@ export default function ProgressScreen() {
   }, []);
 
   const loadProgressData = async () => {
-    const results = await getTestResults();
-    setTestResults(results);
-    
-    // Calculate category-wise stats
-    const stats: Record<string, { total: number; passed: number; scores: number[] }> = {};
-    
-    results.forEach(result => {
-      if (!stats[result.category]) {
-        stats[result.category] = { total: 0, passed: 0, scores: [] };
-      }
-      stats[result.category].total++;
-      stats[result.category].scores.push(result.score);
-      if (result.score >= 70) {
-        stats[result.category].passed++;
-      }
-    });
+    try {
+      const results = await getTestResults();
+      setTestResults(results);
+      
+      // Calculate category-wise stats
+      const stats: Record<string, { total: number; passed: number; scores: number[] }> = {};
+      
+      results.forEach(result => {
+        if (!stats[result.category]) {
+          stats[result.category] = { total: 0, passed: 0, scores: [] };
+        }
+        stats[result.category].total++;
+        stats[result.category].scores.push(result.score);
+        if (result.score >= 70) {
+          stats[result.category].passed++;
+        }
+      });
 
-    const categoryStats: Record<QuestionCategory, { total: number; passed: number; avgScore: number }> = {} as any;
-    Object.entries(stats).forEach(([category, data]) => {
-      categoryStats[category as QuestionCategory] = {
-        total: data.total,
-        passed: data.passed,
-        avgScore: Math.round(data.scores.reduce((sum, score) => sum + score, 0) / data.scores.length)
-      };
-    });
+      const categoryStats: Record<QuestionCategory, { total: number; passed: number; avgScore: number }> = {} as any;
+      Object.entries(stats).forEach(([category, data]) => {
+        categoryStats[category as QuestionCategory] = {
+          total: data.total,
+          passed: data.passed,
+          avgScore: data.scores.length > 0 ? Math.round(data.scores.reduce((sum, score) => sum + score, 0) / data.scores.length) : 0
+        };
+      });
 
-    setCategoryStats(categoryStats);
+      setCategoryStats(categoryStats);
+    } catch (error) {
+      console.error('Failed to load progress data:', error);
+    }
   };
 
   const getProgressColor = (score: number) => {

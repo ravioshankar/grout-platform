@@ -1,4 +1,4 @@
-import { DMVLogo } from '@/components/dmv-logo';
+import { RoadReadyLogo } from '@/components/dmv-logo';
 import { ThemedView } from '@/components/themed-view';
 import { StyleSheet } from 'react-native';
 import { useTheme } from '@/contexts/theme-context';
@@ -20,7 +20,7 @@ export function AppHeader({ title, showLogo = true }: AppHeaderProps) {
     }]}>
       {showLogo && (
         <ThemedView style={styles.logoContainer}>
-          <DMVLogo size={60} />
+          <RoadReadyLogo size={60} />
         </ThemedView>
       )}
     </ThemedView>
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: 8,
-    color: '#1A202C',
+    color: '#b5b8bfff',
     textAlign: 'center',
     fontSize: 18,
     fontWeight: '600',

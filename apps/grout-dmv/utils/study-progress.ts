@@ -13,7 +13,13 @@ export const updateStudyProgress = async (category: string, questionsAnswered: n
     const studyPlanData = await AsyncStorage.getItem(STUDY_PLAN_KEY);
     if (!studyPlanData) return;
     
-    const studyPlan = JSON.parse(studyPlanData);
+    let studyPlan;
+    try {
+      studyPlan = JSON.parse(studyPlanData);
+    } catch (parseError) {
+      console.error('Error parsing study plan data:', parseError);
+      return;
+    }
     
     // Find the day that matches this category
     const dayIndex = studyPlan.findIndex((day: any) => day.category === category);

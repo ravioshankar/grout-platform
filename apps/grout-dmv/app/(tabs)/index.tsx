@@ -25,16 +25,20 @@ export default function HomeScreen() {
   }, []);
 
   const loadDashboardData = async () => {
-    const results = await getTestResults();
-    if (results.length > 0) {
-      const totalTests = results.length;
-      const averageScore = Math.round(results.reduce((sum, r) => sum + r.score, 0) / totalTests);
-      const bestScore = Math.max(...results.map(r => r.score));
-      const passRate = Math.round(results.filter(r => r.score >= 70).length / totalTests * 100);
-      const recent = results[results.length - 1];
-      
-      setStats({ totalTests, averageScore, bestScore, passRate });
-      setRecentTest(recent);
+    try {
+      const results = await getTestResults();
+      if (results.length > 0) {
+        const totalTests = results.length;
+        const averageScore = Math.round(results.reduce((sum, r) => sum + r.score, 0) / totalTests);
+        const bestScore = Math.max(...results.map(r => r.score));
+        const passRate = Math.round(results.filter(r => r.score >= 70).length / totalTests * 100);
+        const recent = results[results.length - 1];
+        
+        setStats({ totalTests, averageScore, bestScore, passRate });
+        setRecentTest(recent);
+      }
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
     }
   };
 

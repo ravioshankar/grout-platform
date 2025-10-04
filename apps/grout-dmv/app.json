@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "grout-dmv",
-    "slug": "grout-dmv",
+    "name": "RoadReady",
+    "slug": "roadready",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "groutdmv",
+    "scheme": "roadready",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

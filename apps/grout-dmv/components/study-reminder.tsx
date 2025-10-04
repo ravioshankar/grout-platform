@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -50,6 +50,28 @@ export function StudyReminder({ onStartStudy }: StudyReminderProps) {
     }
   };
 
+  const reminderMessage = useMemo(() => {
+    if (daysSinceLastStudy === 0) {
+      return "Ready to start your DMV prep journey?";
+    } else if (daysSinceLastStudy === 1) {
+      return "Don't break your streak! Study today.";
+    } else {
+      return `It's been ${daysSinceLastStudy} days since your last study session.`;
+    }
+  }, [daysSinceLastStudy]);
+
+  const reminderIcon = useMemo(() => {
+    if (daysSinceLastStudy <= 1) return 'flame';
+    if (daysSinceLastStudy <= 3) return 'time';
+    return 'warning';
+  }, [daysSinceLastStudy]);
+
+  const reminderColor = useMemo(() => {
+    if (daysSinceLastStudy <= 1) return '#4CAF50';
+    if (daysSinceLastStudy <= 3) return '#FF9800';
+    return '#F44336';
+  }, [daysSinceLastStudy]);
+
   const markStudyComplete = async () => {
     try {
       const today = new Date().toDateString();
@@ -75,38 +97,18 @@ export function StudyReminder({ onStartStudy }: StudyReminderProps) {
     return null;
   }
 
-  const getReminderMessage = () => {
-    if (daysSinceLastStudy === 0) {
-      return "Ready to start your DMV prep journey?";
-    } else if (daysSinceLastStudy === 1) {
-      return "Don't break your streak! Study today.";
-    } else {
-      return `It's been ${daysSinceLastStudy} days since your last study session.`;
-    }
-  };
 
-  const getReminderIcon = () => {
-    if (daysSinceLastStudy <= 1) return 'flame';
-    if (daysSinceLastStudy <= 3) return 'time';
-    return 'warning';
-  };
-
-  const getReminderColor = () => {
-    if (daysSinceLastStudy <= 1) return '#4CAF50';
-    if (daysSinceLastStudy <= 3) return '#FF9800';
-    return '#F44336';
-  };
 
   return (
-    <ThemedView style={[styles.reminderCard, { borderLeftColor: getReminderColor() }]}>
+    <ThemedView style={[styles.reminderCard, { borderLeftColor: reminderColor }]}>
       <ThemedView style={styles.reminderHeader}>
-        <Ionicons name={getReminderIcon()} size={24} color={getReminderColor()} />
+        <Ionicons name={reminderIcon} size={24} color={reminderColor} />
         <ThemedView style={styles.reminderInfo}>
           <ThemedText type="defaultSemiBold" style={styles.reminderTitle}>
             Study Reminder
           </ThemedText>
           <ThemedText style={styles.reminderMessage}>
-            {getReminderMessage()}
+            {reminderMessage}
           </ThemedText>
           {currentStreak > 0 && (
             <ThemedText style={styles.streakText}>
@@ -126,7 +128,7 @@ export function StudyReminder({ onStartStudy }: StudyReminderProps) {
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[styles.studyButton, { backgroundColor: getReminderColor() }]}
+          style={[styles.studyButton, { backgroundColor: reminderColor }]}
           onPress={markStudyComplete}
           activeOpacity={0.7}
         >

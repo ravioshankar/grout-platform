@@ -20,9 +20,14 @@ export default function ReportScreen() {
   }, [testId]);
 
   const loadTestResult = async () => {
-    const results = await getTestResults();
-    const result = results.find(r => r.id === testId);
-    setTestResult(result || null);
+    try {
+      const results = await getTestResults();
+      const result = results.find(r => r.id === testId);
+      setTestResult(result || null);
+    } catch (error) {
+      console.error('Failed to load test result:', error);
+      setTestResult(null);
+    }
   };
 
   if (!testResult) {
