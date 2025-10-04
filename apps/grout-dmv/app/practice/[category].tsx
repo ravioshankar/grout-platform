@@ -3,11 +3,19 @@ import { StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppHeader } from '@/components/app-header';
 import { getQuestionsByCategory } from '@/constants/questions';
 import { Question, QuestionCategory, TestResult } from '@/constants/types';
 import { saveTestResult } from '@/utils/storage';
+import { updateStudyProgress, updateStudyStreak } from '@/utils/study-progress';
+import { submitTestResult, TestMetadata, TestAnalytics } from '@/utils/database';
+import { Platform, Dimensions } from 'react-native';
+import { useTheme } from '@/contexts/theme-context';
+import { Colors } from '@/constants/theme';
 
 export default function PracticeScreen() {
+  const { isDark } = useTheme();
+  const currentScheme = isDark ? 'dark' : 'light';
   const { category } = useLocalSearchParams<{ category: string }>();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   // Default to California for practice
@@ -20,6 +28,8 @@ export default function PracticeScreen() {
   const [startTime] = useState(Date.now());
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>(new Array(questions.length).fill(null));
   const [isCorrect, setIsCorrect] = useState<boolean[]>(new Array(questions.length).fill(false));
+  const [questionTimings, setQuestionTimings] = useState<number[]>([]);
+  const [questionStartTime, setQuestionStartTime] = useState(Date.now());
 
   const handleAnswerSelect = (answerIndex: number) => {
     if (answeredQuestions.has(currentQuestion)) return;
@@ -41,6 +51,12 @@ export default function PracticeScreen() {
     setIsCorrect(newIsCorrect);
     
     setAnsweredQuestions(prev => new Set(prev).add(currentQuestion));
+    
+    // Record timing
+    const timing = Date.now() - questionStartTime;
+    const newTimings = [...questionTimings];
+    newTimings[currentQuestion] = timing;
+    setQuestionTimings(newTimings);
   };
 
   const handleNextQuestion = async () => {
@@ -48,6 +64,7 @@ export default function PracticeScreen() {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedAnswer(null);
       setShowExplanation(false);
+      setQuestionStartTime(Date.now());
     } else {
       const endTime = Date.now();
       const timeSpent = Math.floor((endTime - startTime) / 1000);
@@ -68,6 +85,43 @@ export default function PracticeScreen() {
       };
       
       await saveTestResult(testResult);
+      
+      // Submit to database
+      const metadata: TestMetadata = {
+        appVersion: '1.0.0',
+        platform: Platform.OS as 'ios' | 'android',
+        deviceInfo: {
+          screenSize: `${Dimensions.get('window').width}x${Dimensions.get('window').height}`,
+        },
+        sessionId: `session_${startTime}`,
+        testDuration: timeSpent,
+        pauseCount: 0,
+        hintsUsed: 0,
+      };
+      
+      const analytics: TestAnalytics = {
+        questionTimings,
+        answerChanges: new Array(questions.length).fill(0),
+        struggledQuestions: questions.filter((_, i) => !isCorrect[i]).map(q => q.id),
+        confidenceScores: new Array(questions.length).fill(3),
+        categoryPerformance: [{
+          category: category as QuestionCategory || 'road-signs',
+          score: Math.round((score / questions.length) * 100),
+          timeSpent,
+          questionsCount: questions.length,
+          averageConfidence: 3,
+        }],
+      };
+      
+      await submitTestResult(testResult, metadata, analytics);
+      
+      // Update study progress
+      await updateStudyProgress(category as string, questions.length);
+      await updateStudyStreak();
+      
+      // Update daily goal
+      const { updateDailyGoalProgress } = await import('@/components/daily-goal');
+      await updateDailyGoalProgress(questions.length);
       
       Alert.alert(
         'Practice Complete!',
@@ -98,13 +152,14 @@ export default function PracticeScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={styles.header}>
+      <AppHeader title="Practice" showLogo={false} />
+      <ThemedView style={[styles.header, { backgroundColor: Colors[currentScheme].cardBackground }]}>
         <ThemedText type="subtitle">Practice: {category}</ThemedText>
         <ThemedText>Question {currentQuestion + 1} of {questions.length}</ThemedText>
         <ThemedText>Score: {score}/{answeredQuestions.size}</ThemedText>
       </ThemedView>
 
-      <ThemedView style={styles.questionContainer}>
+      <ThemedView style={[styles.questionContainer, { backgroundColor: Colors[currentScheme].cardBackground }]}>
         <ThemedText type="defaultSemiBold" style={styles.question}>
           {question.question}
         </ThemedText>
@@ -128,6 +183,8 @@ export default function PracticeScreen() {
               style={optionStyle}
               onPress={() => handleAnswerSelect(index)}
               disabled={isAnswered}
+              activeOpacity={0.7}
+              hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
             >
               <ThemedText style={styles.optionText}>{option}</ThemedText>
             </TouchableOpacity>
@@ -151,6 +208,8 @@ export default function PracticeScreen() {
           style={[styles.navButton, currentQuestion === 0 && styles.disabledButton]}
           onPress={handlePreviousQuestion}
           disabled={currentQuestion === 0}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <ThemedText style={styles.buttonText}>Previous</ThemedText>
         </TouchableOpacity>
@@ -159,6 +218,8 @@ export default function PracticeScreen() {
           style={[styles.navButton, !isAnswered && styles.disabledButton]}
           onPress={handleNextQuestion}
           disabled={!isAnswered}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <ThemedText style={styles.buttonText}>
             {currentQuestion < questions.length - 1 ? 'Next' : 'Finish'}
@@ -172,16 +233,32 @@ export default function PracticeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
     gap: 8,
+    padding: 20,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
   questionContainer: {
     flex: 1,
+    marginHorizontal: 16,
     marginBottom: 20,
+    padding: 20,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
   question: {
     fontSize: 18,
@@ -197,16 +274,16 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   selectedOption: {
-    borderColor: '#007AFF',
-    backgroundColor: '#E3F2FD',
+    borderColor: '#F59E0B',
+    backgroundColor: '#FFFBEB',
   },
   correctOption: {
-    borderColor: '#4CAF50',
-    backgroundColor: '#E8F5E8',
+    borderColor: '#16A34A',
+    backgroundColor: '#F0FDF4',
   },
   incorrectOption: {
-    borderColor: '#F44336',
-    backgroundColor: '#FFEBEE',
+    borderColor: '#DC2626',
+    backgroundColor: '#FEF2F2',
   },
   optionText: {
     fontSize: 16,
@@ -214,15 +291,15 @@ const styles = StyleSheet.create({
   explanationContainer: {
     marginTop: 20,
     padding: 16,
-    backgroundColor: '#FFF3E0',
+    backgroundColor: '#FFFBEB',
     borderRadius: 8,
     borderLeftWidth: 4,
-    borderLeftColor: '#FF9800',
+    borderLeftColor: '#F59E0B',
   },
   explanationTitle: {
     fontSize: 16,
     marginBottom: 8,
-    color: '#E65100',
+    color: '#D97706',
   },
   explanationText: {
     fontSize: 14,
@@ -232,16 +309,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   navButton: {
     flex: 1,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#16A34A',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   disabledButton: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#9CA3AF',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   buttonText: {
     color: 'white',

@@ -3,11 +3,15 @@ import { StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { DMVLogo } from '@/components/dmv-logo';
+import { AppHeader } from '@/components/app-header';
 import { TestResult } from '@/constants/types';
 import { getTestResults } from '@/utils/storage';
+import { useTheme } from '@/contexts/theme-context';
+import { Colors } from '@/constants/theme';
 
 export default function ReportScreen() {
+  const { isDark } = useTheme();
+  const currentScheme = isDark ? 'dark' : 'light';
   const { testId } = useLocalSearchParams<{ testId: string }>();
   const [testResult, setTestResult] = useState<TestResult | null>(null);
 
@@ -33,17 +37,15 @@ export default function ReportScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <ThemedView style={styles.header}>
-        <DMVLogo size={40} />
-        <ThemedText type="title">Test Report</ThemedText>
-      </ThemedView>
+      <AppHeader title="Test Report" showLogo={false} />
 
-      <ThemedView style={styles.scoreCard}>
+
+      <ThemedView style={[styles.scoreCard, { backgroundColor: Colors[currentScheme].cardBackground }]}>
         <ThemedText type="subtitle">Overall Score</ThemedText>
-        <ThemedText style={[styles.score, { color: passed ? 'green' : 'red' }]}>
+        <ThemedText style={[styles.score, { color: passed ? '#16A34A' : '#DC2626' }]}>
           {testResult.score}%
         </ThemedText>
-        <ThemedText style={[styles.status, { color: passed ? 'green' : 'red' }]}>
+        <ThemedText style={[styles.status, { color: passed ? '#16A34A' : '#DC2626' }]}>
           {passed ? 'PASSED' : 'FAILED'}
         </ThemedText>
         <ThemedText>
@@ -51,7 +53,7 @@ export default function ReportScreen() {
         </ThemedText>
       </ThemedView>
 
-      <ThemedView style={styles.details}>
+      <ThemedView style={[styles.details, { backgroundColor: Colors[currentScheme].cardBackground }]}>
         <ThemedText type="subtitle">Test Details</ThemedText>
         <ThemedText>State: {testResult.stateCode}</ThemedText>
         <ThemedText>Category: {testResult.category}</ThemedText>
@@ -63,7 +65,7 @@ export default function ReportScreen() {
       <ThemedView style={styles.questions}>
         <ThemedText type="subtitle">Question Review</ThemedText>
         {testResult.questions.map((question, index) => (
-          <ThemedView key={index} style={styles.questionItem}>
+          <ThemedView key={index} style={[styles.questionItem, { backgroundColor: Colors[currentScheme].cardBackground }]}>
             <ThemedText style={styles.questionNumber}>Q{index + 1}</ThemedText>
             <ThemedText style={styles.questionText}>{question.question}</ThemedText>
             
@@ -82,7 +84,7 @@ export default function ReportScreen() {
               )}
               
               {question.explanation && (
-                <ThemedText style={styles.explanation}>
+                <ThemedText style={[styles.explanation, { opacity: 0.7 }]}>
                   {question.explanation}
                 </ThemedText>
               )}
@@ -99,14 +101,10 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
+
   scoreCard: {
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f8f9fa',
     borderRadius: 12,
     marginBottom: 20,
   },
@@ -122,7 +120,6 @@ const styles = StyleSheet.create({
   },
   details: {
     padding: 16,
-    backgroundColor: '#f8f9fa',
     borderRadius: 8,
     marginBottom: 20,
     gap: 8,
@@ -132,7 +129,6 @@ const styles = StyleSheet.create({
   },
   questionItem: {
     padding: 16,
-    backgroundColor: '#f8f9fa',
     borderRadius: 8,
     marginBottom: 12,
   },
@@ -164,7 +160,6 @@ const styles = StyleSheet.create({
   explanation: {
     fontSize: 12,
     fontStyle: 'italic',
-    color: '#666',
     marginTop: 4,
   },
 });

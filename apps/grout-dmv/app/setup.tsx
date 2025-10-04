@@ -3,7 +3,7 @@ import { StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { DMVLogo } from '@/components/dmv-logo';
+import { AppHeader } from '@/components/app-header';
 import { US_STATES } from '@/constants/states';
 import { State, QuestionCategory } from '@/constants/types';
 
@@ -50,10 +50,8 @@ export default function SetupScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <ThemedView style={styles.header}>
-        <DMVLogo size={50} />
-        <ThemedText type="title" style={styles.title}>Get Started</ThemedText>
-      </ThemedView>
+      <AppHeader title="Setup Test" />
+      <ThemedView style={styles.content}>
 
       {/* State Selection */}
       <ThemedView style={styles.section}>
@@ -64,6 +62,8 @@ export default function SetupScreen() {
             selectedState && styles.selectedItem
           ]}
           onPress={() => setShowStateDropdown(!showStateDropdown)}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <ThemedText style={styles.dropdownText}>
             {selectedState ? `${selectedState.name} (${selectedState.code})` : 'Choose your state...'}
@@ -81,6 +81,8 @@ export default function SetupScreen() {
                   setSelectedState(state);
                   setShowStateDropdown(false);
                 }}
+                activeOpacity={0.7}
+                hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
               >
                 <ThemedText>{state.name} ({state.code})</ThemedText>
                 <ThemedText style={styles.passingScore}>Pass: {state.passingScore}%</ThemedText>
@@ -104,6 +106,8 @@ export default function SetupScreen() {
               setSelectedTestType(type.id);
               setSelectedCategory(null); // Reset category when test type changes
             }}
+            activeOpacity={0.7}
+            hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
           >
             <ThemedText type="defaultSemiBold">{type.title}</ThemedText>
             <ThemedText style={styles.description}>{type.description}</ThemedText>
@@ -124,6 +128,8 @@ export default function SetupScreen() {
                   selectedCategory === category.id && styles.selectedItem
                 ]}
                 onPress={() => setSelectedCategory(category.id as QuestionCategory)}
+                activeOpacity={0.7}
+                hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
               >
                 <ThemedText style={styles.categoryIcon}>{category.icon}</ThemedText>
                 <ThemedText style={styles.categoryTitle}>{category.title}</ThemedText>
@@ -138,11 +144,14 @@ export default function SetupScreen() {
         style={[styles.startButton, !canStart && styles.disabledButton]}
         onPress={handleStart}
         disabled={!canStart}
+        activeOpacity={0.7}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <ThemedText style={styles.startButtonText}>
           Start {selectedTestType === 'full-test' ? 'Test' : 'Practice'}
         </ThemedText>
       </TouchableOpacity>
+      </ThemedView>
     </ScrollView>
   );
 }
@@ -150,30 +159,30 @@ export default function SetupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  title: {
-    marginTop: 10,
+
+  content: {
+    padding: 20,
   },
   section: {
-    marginBottom: 30,
+    marginBottom: 32,
   },
   sectionTitle: {
-    marginBottom: 15,
+    marginBottom: 16,
   },
   dropdown: {
     padding: 16,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   dropdownText: {
     fontSize: 16,
@@ -181,11 +190,10 @@ const styles = StyleSheet.create({
   },
   dropdownArrow: {
     fontSize: 16,
-    color: '#666',
+    opacity: 0.7,
   },
   dropdownList: {
     maxHeight: 200,
-    backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
@@ -201,19 +209,18 @@ const styles = StyleSheet.create({
   },
   passingScore: {
     fontSize: 12,
-    color: '#666',
+    opacity: 0.7,
   },
   testTypeItem: {
     padding: 16,
     marginBottom: 10,
-    backgroundColor: '#f5f5f5',
     borderRadius: 8,
     borderWidth: 2,
     borderColor: 'transparent',
   },
   description: {
     fontSize: 14,
-    color: '#666',
+    opacity: 0.7,
     marginTop: 4,
   },
   categoryGrid: {
@@ -225,7 +232,6 @@ const styles = StyleSheet.create({
     width: '48%',
     padding: 16,
     marginBottom: 10,
-    backgroundColor: '#f5f5f5',
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 2,
@@ -240,16 +246,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   selectedItem: {
-    borderColor: '#007AFF',
-    backgroundColor: '#E3F2FD',
+    borderColor: '#16A34A',
+    backgroundColor: '#F0FDF4',
+    borderWidth: 2,
   },
   startButton: {
-    backgroundColor: '#007AFF',
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: '#16A34A',
+    padding: 18,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 32,
     marginBottom: 40,
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
   disabledButton: {
     backgroundColor: '#ccc',

@@ -3,12 +3,19 @@ import { StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppHeader } from '@/components/app-header';
 import { US_STATES } from '@/constants/states';
 import { Question, QuestionCategory, TestResult } from '@/constants/types';
 import { getRandomQuestions } from '@/constants/questions';
 import { saveTestResult } from '@/utils/storage';
+import { submitTestResult, TestMetadata, TestAnalytics } from '@/utils/database';
+import { Platform, Dimensions } from 'react-native';
+import { useTheme } from '@/contexts/theme-context';
+import { Colors } from '@/constants/theme';
 
 export default function TestScreen() {
+  const { isDark } = useTheme();
+  const currentScheme = isDark ? 'dark' : 'light';
   const { state } = useLocalSearchParams<{ state: string }>();
   const selectedState = US_STATES.find(s => s.code === state);
   const questions = getRandomQuestions(state || 'CA', 10);
@@ -22,6 +29,9 @@ export default function TestScreen() {
   const [userAnswers, setUserAnswers] = useState<(number | null)[]>(new Array(questions.length).fill(null));
   const [isCorrect, setIsCorrect] = useState<boolean[]>(new Array(questions.length).fill(false));
   const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [questionTimings, setQuestionTimings] = useState<number[]>([]);
+  const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+  const [pauseCount, setPauseCount] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -47,6 +57,12 @@ export default function TestScreen() {
     const newUserAnswers = [...userAnswers];
     newUserAnswers[currentQuestion] = answerIndex;
     setUserAnswers(newUserAnswers);
+    
+    // Record timing
+    const timing = Date.now() - questionStartTime;
+    const newTimings = [...questionTimings];
+    newTimings[currentQuestion] = timing;
+    setQuestionTimings(newTimings);
   };
 
   const handleNextQuestion = () => {
@@ -67,6 +83,7 @@ export default function TestScreen() {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedAnswer(null);
+      setQuestionStartTime(Date.now());
     } else {
       finishTest();
     }
@@ -92,6 +109,37 @@ export default function TestScreen() {
     };
     
     await saveTestResult(result);
+    
+    // Submit to database with analytics
+    const metadata: TestMetadata = {
+      appVersion: '1.0.0',
+      platform: Platform.OS as 'ios' | 'android',
+      deviceInfo: {
+        screenSize: `${Dimensions.get('window').width}x${Dimensions.get('window').height}`,
+        os: Platform.Version?.toString(),
+      },
+      sessionId: `session_${startTime}`,
+      testDuration: timeSpent,
+      pauseCount,
+      hintsUsed: 0,
+    };
+    
+    const analytics: TestAnalytics = {
+      questionTimings,
+      answerChanges: new Array(questions.length).fill(0),
+      struggledQuestions: questions.filter((_, i) => !isCorrect[i]).map(q => q.id),
+      confidenceScores: new Array(questions.length).fill(3),
+      categoryPerformance: [{
+        category: 'road-signs',
+        score: Math.round((score / questions.length) * 100),
+        timeSpent,
+        questionsCount: questions.length,
+        averageConfidence: 3,
+      }],
+    };
+    
+    await submitTestResult(result, metadata, analytics);
+    
     setTestResult(result);
     setShowResult(true);
   };
@@ -126,12 +174,16 @@ export default function TestScreen() {
         <TouchableOpacity
           style={styles.button}
           onPress={() => testResult && router.push(`/report/${testResult.id}`)}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <ThemedText style={styles.buttonText}>View Report</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: '#666', marginTop: 10 }]}
           onPress={() => router.push('/')}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <ThemedText style={styles.buttonText}>Back to Dashboard</ThemedText>
         </TouchableOpacity>
@@ -143,6 +195,7 @@ export default function TestScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <AppHeader title="DMV Test" showLogo={false} />
       <ThemedView style={styles.header}>
         <ThemedText type="subtitle">{selectedState.name} DMV Test</ThemedText>
         <ThemedText>Time: {formatTime(timeLeft)}</ThemedText>
@@ -162,6 +215,8 @@ export default function TestScreen() {
               selectedAnswer === index && styles.selectedOption
             ]}
             onPress={() => handleAnswerSelect(index)}
+            activeOpacity={0.7}
+            hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
           >
             <ThemedText style={styles.optionText}>{option}</ThemedText>
           </TouchableOpacity>
@@ -172,6 +227,8 @@ export default function TestScreen() {
         style={[styles.button, selectedAnswer === null && styles.disabledButton]}
         onPress={handleNextQuestion}
         disabled={selectedAnswer === null}
+        activeOpacity={0.7}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <ThemedText style={styles.buttonText}>
           {currentQuestion < questions.length - 1 ? 'Next Question' : 'Finish Test'}
@@ -209,14 +266,14 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   selectedOption: {
-    borderColor: '#007AFF',
-    backgroundColor: '#E3F2FD',
+    borderColor: '#FF6B35',
+    backgroundColor: '#FFF3E0',
   },
   optionText: {
     fontSize: 16,
   },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#4CAF50',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',

@@ -1,29 +1,69 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Traffic Signal Inspired Theme for DMV App
+ * Using classic traffic light colors: Red (Stop), Yellow (Caution), Green (Go)
  */
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+// Traffic Signal Colors
+const trafficRed = '#DC2626';    // Stop/Error
+const trafficYellow = '#F59E0B'; // Caution/Warning
+const trafficGreen = '#16A34A';  // Go/Success
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    text: '#1F2937',
+    background: '#F8FAFC',
+    cardBackground: '#FFFFFF',
+    tint: trafficGreen,
+    icon: '#6B7280',
+    tabIconDefault: '#9CA3AF',
+    tabIconSelected: trafficGreen,
+    link: '#1976D2',
+    border: '#E5E7EB',
+    shadow: 'rgba(0, 0, 0, 0.1)',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    text: '#F9FAFB',
+    background: '#0F172A',
+    cardBackground: '#1E293B',
+    tint: trafficGreen,
+    icon: '#CBD5E1',
+    tabIconDefault: '#64748B',
+    tabIconSelected: trafficGreen,
+    link: '#60A5FA',
+    border: '#334155',
+    shadow: 'rgba(0, 0, 0, 0.3)',
+  },
+};
+
+// Traffic Signal Theme Palette
+export const AppColors = {
+  // Primary traffic signal colors
+  stop: trafficRed,        // Red - Errors, failures, danger
+  caution: trafficYellow,  // Yellow - Warnings, pending, attention
+  go: trafficGreen,        // Green - Success, pass, proceed
+  
+  // Supporting colors
+  primary: trafficGreen,   // Main brand color (Go/Success)
+  secondary: trafficYellow, // Secondary actions (Caution)
+  accent: trafficRed,      // Accent for important actions (Stop)
+  error: trafficRed,       // Error states
+  warning: trafficYellow,  // Warning states
+  success: trafficGreen,   // Success states
+  
+  // UI colors
+  surface: '#FFFFFF',      // Card backgrounds
+  background: '#F8FAFC',   // App background
+  border: '#E5E7EB',       // Borders
+  shadow: 'rgba(0, 0, 0, 0.1)',
+  
+  // Text colors
+  text: {
+    primary: '#1F2937',     // Main text (dark gray)
+    secondary: '#6B7280',   // Secondary text (medium gray)
+    disabled: '#9CA3AF',    // Disabled text (light gray)
+    inverse: '#FFFFFF',     // White text for dark backgrounds
   },
 };
 
