@@ -1,4 +1,4 @@
-import { RoadReadyLogo } from '@/components/dmv-logo';
+import { RoadReadyLogo } from '@/components/logo';
 import { ThemedView } from '@/components/themed-view';
 import { StyleSheet } from 'react-native';
 import { useTheme } from '@/contexts/theme-context';

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
-import { RoadReadyLogo } from '@/components/dmv-logo';
+import { RoadReadyLogo } from '@/components/logo';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
 
@@ -20,11 +20,13 @@ export default function SplashScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  const logoSize = Math.min(width * 0.3, height * 0.15, 150);
+  const logoSize = Math.min(width * 0.25, height * 0.12, 120);
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: Colors[currentScheme].background }]}>
-      <RoadReadyLogo size={logoSize} />
+      <ThemedView style={styles.logoWrapper}>
+        <RoadReadyLogo size={logoSize} />
+      </ThemedView>
     </ThemedView>
   );
 }
@@ -34,5 +36,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  logoWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

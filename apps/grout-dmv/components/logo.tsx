@@ -1,17 +1,15 @@
-import { StyleSheet, View, Text } from 'react-native';
-import { ThemedText } from '@/components/themed-text';
-import { useThemeColor } from '@/hooks/use-theme-color';
 import { useTheme } from '@/contexts/theme-context';
+import { useEffect } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
-  useSharedValue,
+  Easing,
+  interpolate,
   useAnimatedStyle,
-  withTiming,
+  useSharedValue,
   withRepeat,
   withSequence,
-  interpolate,
-  Easing,
+  withTiming,
 } from 'react-native-reanimated';
-import { useEffect } from 'react';
 
 export function RoadReadyLogo({ size = 40 }: { size?: number }) {
   const { isDark } = useTheme();
@@ -71,13 +69,26 @@ export function RoadReadyLogo({ size = 40 }: { size?: number }) {
     return { opacity };
   });
 
+  const animatedBorderStyle = useAnimatedStyle(() => {
+    const colors = ['#EF4444', '#FBBF24', '#22C55E'];
+    const colorIndex = Math.floor(lightCycle.value) % 3;
+    return {
+      borderTopColor: lightCycle.value < 1 ? '#EF4444' : lightCycle.value < 2 ? '#FBBF24' : '#22C55E',
+      borderRightColor: lightCycle.value < 1 ? '#FBBF24' : lightCycle.value < 2 ? '#22C55E' : '#EF4444',
+      borderBottomColor: lightCycle.value < 1 ? '#22C55E' : lightCycle.value < 2 ? '#EF4444' : '#FBBF24',
+      borderLeftColor: lightCycle.value < 1 ? '#EF4444' : lightCycle.value < 2 ? '#FBBF24' : '#22C55E',
+    };
+  });
+
   return (
-    <View style={[styles.container, { width: size * 3.5, height: size }]}>
-      <View style={[styles.logoScene, { 
-        width: size, 
-        height: size,
-        backgroundColor: containerBg
-      }]}>
+    <View style={styles.container}>
+      <Animated.View style={[styles.trafficBorder, animatedBorderStyle]}>
+        <View style={styles.logoWrapper}>
+              <View style={[styles.logoScene, { 
+                width: size, 
+                height: size,
+                backgroundColor: containerBg
+              }]}>
         {/* Road Base */}
         <View style={[styles.road, { 
           width: size, 
@@ -157,30 +168,36 @@ export function RoadReadyLogo({ size = 40 }: { size?: number }) {
             backgroundColor: riderColor
           }]} />
         </Animated.View>
-      </View>
-      
-      <View style={styles.textContainer}>
-        <Text style={[styles.title, { 
-          fontSize: Math.max(size * 0.22, 16),
-          fontWeight: 'bold',
-          color: titleColor
-        }]}>
-          RoadReady
-        </Text>
-        <Text style={[styles.subtitle, { 
-          fontSize: Math.max(size * 0.12, 12),
-          color: subtitleColor
-        }]}>
-          DMV Test Prep
-        </Text>
-      </View>
+              </View>
+              
+              <View style={styles.textContainer}>
+                <Text style={[styles.title, { 
+                  fontSize: Math.max(size * 0.22, 16),
+                  fontWeight: 'bold',
+                  // color: titleColor
+                }]}>
+                  RoadReady
+                </Text>
+              </View>
+        </View>
+      </Animated.View>
     </View>
+
+    
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trafficBorder: {
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 4,
+  },
+  logoWrapper: {
     alignItems: 'center',
     gap: 8,
   },
@@ -286,17 +303,15 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   textContainer: {
-    justifyContent: 'center',
-    flex: 1,
+    alignItems: 'center',
   },
   title: {
     letterSpacing: 0.5,
-    lineHeight: undefined,
+    textAlign: 'center',
   },
   subtitle: {
     letterSpacing: 0.3,
     textAlign: 'center',
     marginTop: 2,
-    lineHeight: undefined,
   },
 });

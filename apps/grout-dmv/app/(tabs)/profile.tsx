@@ -284,8 +284,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-
   content: {
+    flex: 1,
     padding: 16,
   },
   statsContainer: {
@@ -300,6 +300,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   statNumber: {
     fontSize: 24,
@@ -336,8 +341,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 8,
-    marginBottom: 8,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   testInfo: {
     flex: 1,
@@ -360,9 +370,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 8,
-    marginBottom: 8,
+    borderRadius: 12,
+    marginBottom: 12,
     gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   settingText: {
     flex: 1,
