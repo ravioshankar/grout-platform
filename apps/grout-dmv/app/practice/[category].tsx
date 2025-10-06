@@ -106,9 +106,11 @@ export default function PracticeScreen() {
 
   const handlePreviousQuestion = () => {
     if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1);
-      setSelectedAnswer(null);
-      setShowExplanation(false);
+      const prevQuestion = currentQuestion - 1;
+      const wasAnswered = answeredQuestions.has(prevQuestion);
+      setCurrentQuestion(prevQuestion);
+      setSelectedAnswer(wasAnswered ? userAnswers[prevQuestion] : null);
+      setShowExplanation(wasAnswered);
     }
   };
 

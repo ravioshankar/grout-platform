@@ -19,10 +19,10 @@ export const saveTestResult = async (result: TestResult): Promise<void> => {
   }
 };
 
-export const getTestResults = async (): Promise<TestResult[]> => {
+export const getTestResults = async (stateCode?: string): Promise<TestResult[]> => {
   try {
     await ensureInitialized();
-    return await dbGetTestResults();
+    return await dbGetTestResults(stateCode);
   } catch (error) {
     console.error('Error getting test results:', error);
     return [];

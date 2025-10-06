@@ -73,9 +73,10 @@ export const saveTestResult = async (result: any) => {
   await put('test_results', result);
 };
 
-export const getTestResults = async () => {
+export const getTestResults = async (stateCode?: string) => {
   const results = await getAll<any>('test_results');
-  return results.map((r: any) => ({
+  const filtered = stateCode ? results.filter(r => r.stateCode === stateCode) : results;
+  return filtered.map((r: any) => ({
     ...r,
     completedAt: new Date(r.completedAt),
   }));
@@ -105,6 +106,7 @@ export const saveSetting = async (key: string, value: string) => {
 
 export const getSetting = async (key: string): Promise<string | null> => {
   try {
+    const { getOne } = await import('./indexeddb');
     const result = await getOne<{ key: string; value: string }>('settings', key);
     return result?.value || null;
   } catch (error) {

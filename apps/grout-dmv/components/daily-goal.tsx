@@ -5,7 +5,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
-import { getSetting, saveSetting } from '@/utils/database';
+import { getSetting, saveSetting, initDatabase } from '@/utils/database';
 
 interface DailyGoalProps {
   onGoalComplete?: () => void;
@@ -33,7 +33,6 @@ export function DailyGoal({ onGoalComplete }: DailyGoalProps) {
         setQuestionsAnswered(answered);
         setIsCompleted(answered >= dailyGoal);
       } else {
-        // New day, reset progress
         setQuestionsAnswered(0);
         setIsCompleted(false);
         await saveSetting('daily_goal_date', today);
@@ -41,6 +40,8 @@ export function DailyGoal({ onGoalComplete }: DailyGoalProps) {
       }
     } catch (error) {
       console.error('Error loading daily progress:', error);
+      setQuestionsAnswered(0);
+      setIsCompleted(false);
     }
   };
 

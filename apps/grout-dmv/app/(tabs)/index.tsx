@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { StyleSheet, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -7,47 +7,69 @@ import { AppHeader } from '@/components/app-header';
 import { StudyReminder } from '@/components/study-reminder';
 import { DailyGoal } from '@/components/daily-goal';
 import { getTestResults } from '@/utils/storage';
+import { getUserProfile } from '@/utils/database';
 import { TestResult } from '@/constants/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
 import { initDatabase, runMigrations } from '@/utils/database';
 
-const { width } = Dimensions.get('window');
-
 export default function HomeScreen() {
-  const [stats, setStats] = useState({ totalTests: 0, averageScore: 0, bestScore: 0, passRate: 0 });
-  const [recentTest, setRecentTest] = useState<TestResult | null>(null);
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [dbInitialized, setDbInitialized] = useState(false);
   const { isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
 
+  const stats = useMemo(() => {
+    if (testResults.length === 0) return { totalTests: 0, averageScore: 0, bestScore: 0, passRate: 0 };
+    const totalTests = testResults.length;
+    const averageScore = Math.round(testResults.reduce((sum, r) => sum + r.score, 0) / totalTests);
+    const bestScore = Math.max(...testResults.map(r => r.score));
+    const passRate = Math.round(testResults.filter(r => r.score >= 70).length / totalTests * 100);
+    return { totalTests, averageScore, bestScore, passRate };
+  }, [testResults]);
+
+  const recentTest = useMemo(() => 
+    testResults.length > 0 ? testResults[testResults.length - 1] : null,
+    [testResults]
+  );
+
   useEffect(() => {
     const init = async () => {
-      await initDatabase();
-      // Run migrations to ensure all tables exist
-      await runMigrations();
-      loadDashboardData();
+      try {
+        await initDatabase();
+        await runMigrations();
+        setDbInitialized(true);
+        await loadDashboardData();
+      } catch (error) {
+        console.error('Failed to initialize:', error);
+        setIsLoading(false);
+      }
     };
     init();
   }, []);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
-      const results = await getTestResults();
-      if (results.length > 0) {
-        const totalTests = results.length;
-        const averageScore = Math.round(results.reduce((sum, r) => sum + r.score, 0) / totalTests);
-        const bestScore = Math.max(...results.map(r => r.score));
-        const passRate = Math.round(results.filter(r => r.score >= 70).length / totalTests * 100);
-        const recent = results[results.length - 1];
-        
-        setStats({ totalTests, averageScore, bestScore, passRate });
-        setRecentTest(recent);
-      }
+      const profile = await getUserProfile();
+      const stateCode = profile?.selectedState;
+      const results = await getTestResults(stateCode);
+      setTestResults(results);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
+      setTestResults([]);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadDashboardData();
+    setRefreshing(false);
+  }, [loadDashboardData]);
 
   const quickActions = [
     { id: 'practice', title: 'Quick Practice', icon: 'book', color: '#F59E0B', route: '/categories' },
@@ -56,15 +78,30 @@ export default function HomeScreen() {
     { id: 'bookmarks', title: 'Bookmarks', icon: 'bookmark', color: '#DC2626', route: '/bookmarks' }
   ];
 
+  if (isLoading) {
+    return (
+      <ThemedView style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#16A34A" />
+        <ThemedText style={styles.loadingText}>Loading your progress...</ThemedText>
+      </ThemedView>
+    );
+  }
+
   return (
-    <ScrollView style={[styles.container, { backgroundColor: isDark ? '#0F172A' : '#F8FAFC' }]} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={[styles.container, { backgroundColor: isDark ? '#0F172A' : '#F8FAFC' }]} 
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#16A34A" />
+      }
+    >
       <AppHeader title="Home" />
 
       {/* Study Reminder */}
       <StudyReminder onStartStudy={() => router.push('/study-plan')} />
 
       {/* Daily Goal */}
-      <DailyGoal onGoalComplete={() => console.log('Daily goal completed!')} />
+      {dbInitialized && <DailyGoal onGoalComplete={() => console.log('Daily goal completed!')} />}
 
       {/* Stats Overview */}
       {stats.totalTests > 0 && (
@@ -377,5 +414,15 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    opacity: 0.7,
   },
 });

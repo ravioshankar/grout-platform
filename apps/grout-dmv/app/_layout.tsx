@@ -1,12 +1,9 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
-import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { syncService } from '@/utils/sync-service';
 import { ThemeProvider as AppThemeProvider } from '@/contexts/theme-context';
 
 const headerStyle = {
@@ -34,25 +31,6 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-
-  useEffect(() => {
-    const initializeSync = async () => {
-      try {
-        await syncService.initialize();
-      } catch (error) {
-        console.error('Failed to initialize sync service:', error);
-      }
-    };
-    
-    initializeSync();
-    return () => {
-      try {
-        syncService.stop();
-      } catch (error) {
-        console.error('Failed to stop sync service:', error);
-      }
-    };
-  }, []);
 
   return (
     <AppThemeProvider>

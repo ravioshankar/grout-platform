@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { StyleSheet, TouchableOpacity, ScrollView, Alert, RefreshControl, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AppHeader } from '@/components/app-header';
 import { getTestResults, clearTestResults } from '@/utils/storage';
+import { getUserProfile } from '@/utils/database';
 import { TestResult } from '@/constants/types';
 import { Ionicons } from '@expo/vector-icons';
 import { syncService } from '@/utils/sync-service';
@@ -17,15 +18,20 @@ import Constants from 'expo-constants';
 
 export default function ProfileScreen() {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
-  const [stats, setStats] = useState({
-    totalTests: 0,
-    averageScore: 0,
-    bestScore: 0,
-    testsPassedCount: 0
-  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [unsyncedCount, setUnsyncedCount] = useState(0);
   const { theme, setTheme, isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
+
+  const stats = useMemo(() => {
+    if (testResults.length === 0) return { totalTests: 0, averageScore: 0, bestScore: 0, testsPassedCount: 0 };
+    const totalTests = testResults.length;
+    const averageScore = Math.round(testResults.reduce((sum, r) => sum + r.score, 0) / totalTests);
+    const bestScore = Math.max(...testResults.map(r => r.score));
+    const testsPassedCount = testResults.filter(r => r.score >= 70).length;
+    return { totalTests, averageScore, bestScore, testsPassedCount };
+  }, [testResults]);
 
   useEffect(() => {
     loadUserData();
@@ -92,19 +98,25 @@ export default function ProfileScreen() {
     );
   };
 
-  const loadUserData = async () => {
-    const results = await getTestResults();
-    setTestResults(results);
-    
-    if (results.length > 0) {
-      const totalTests = results.length;
-      const averageScore = Math.round(results.reduce((sum, r) => sum + r.score, 0) / totalTests);
-      const bestScore = Math.max(...results.map(r => r.score));
-      const testsPassedCount = results.filter(r => r.score >= 70).length;
-      
-      setStats({ totalTests, averageScore, bestScore, testsPassedCount });
+  const loadUserData = useCallback(async () => {
+    try {
+      const profile = await getUserProfile();
+      const stateCode = profile?.selectedState;
+      const results = await getTestResults(stateCode);
+      setTestResults(results);
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadUserData();
+    await loadSyncStatus();
+    setRefreshing(false);
+  }, [loadUserData]);
 
   const handleClearData = () => {
     Alert.alert(
@@ -118,7 +130,6 @@ export default function ProfileScreen() {
           onPress: async () => {
             await clearTestResults();
             setTestResults([]);
-            setStats({ totalTests: 0, averageScore: 0, bestScore: 0, testsPassedCount: 0 });
           }
         }
       ]
@@ -147,8 +158,22 @@ export default function ProfileScreen() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <ThemedView style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#16A34A" />
+        <ThemedText style={styles.loadingText}>Loading profile...</ThemedText>
+      </ThemedView>
+    );
+  }
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#16A34A" />
+      }
+    >
       <AppHeader title="My Profile" />
       <ThemedView style={styles.content}>
 
@@ -480,5 +505,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.7,
     marginRight: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    opacity: 0.7,
   },
 });

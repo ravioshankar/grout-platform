@@ -92,6 +92,9 @@ export const saveUserProfile = async (profile: { selectedState: string; selected
     const database = getDatabase();
     const now = Date.now();
     
+    // Delete existing profile first
+    await database.runAsync('DELETE FROM user_profile');
+    
     await database.runAsync(
       'INSERT INTO user_profile (selected_state, selected_test_type, theme, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
       [profile.selectedState, profile.selectedTestType, profile.theme || 'auto', now, now]
@@ -187,10 +190,20 @@ export const saveTestResult = async (result: any) => {
   }
 };
 
-export const getTestResults = async () => {
+export const getTestResults = async (stateCode?: string) => {
   try {
     const database = getDatabase();
-    const results = await database.getAllAsync<any>('SELECT * FROM test_results ORDER BY completed_at DESC');
+    let query = 'SELECT * FROM test_results';
+    let params: any[] = [];
+    
+    if (stateCode) {
+      query += ' WHERE state_code = ?';
+      params.push(stateCode);
+    }
+    
+    query += ' ORDER BY completed_at DESC';
+    
+    const results = await database.getAllAsync<any>(query, params);
     
     return results.map((r: any) => ({
       id: r.id,
