@@ -8,8 +8,6 @@ import { getQuestionsByCategory } from '@/constants/questions';
 import { Question, QuestionCategory, TestResult } from '@/constants/types';
 import { saveTestResult } from '@/utils/storage';
 import { updateStudyProgress, updateStudyStreak } from '@/utils/study-progress';
-import { submitTestResult, TestMetadata, TestAnalytics } from '@/utils/database';
-import { Platform, Dimensions } from 'react-native';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
 
@@ -69,12 +67,15 @@ export default function PracticeScreen() {
       const endTime = Date.now();
       const timeSpent = Math.floor((endTime - startTime) / 1000);
       
+      // Calculate final score from isCorrect array
+      const finalScore = isCorrect.filter(Boolean).length;
+      
       const testResult: TestResult = {
         id: `practice_${Date.now()}`,
         stateCode: 'CA',
-        score: Math.round((score / questions.length) * 100),
+        score: Math.round((finalScore / questions.length) * 100),
         totalQuestions: questions.length,
-        correctAnswers: score,
+        correctAnswers: finalScore,
         category: category as QuestionCategory || 'road-signs',
         completedAt: new Date(),
         timeSpent,
@@ -86,41 +87,9 @@ export default function PracticeScreen() {
       
       try {
         await saveTestResult(testResult);
-        
-        // Submit to database
-        const metadata: TestMetadata = {
-          appVersion: '1.0.0',
-          platform: Platform.OS as 'ios' | 'android',
-          deviceInfo: {
-            screenSize: `${Dimensions.get('window').width}x${Dimensions.get('window').height}`,
-          },
-          sessionId: `session_${startTime}`,
-          testDuration: timeSpent,
-          pauseCount: 0,
-          hintsUsed: 0,
-        };
-        
-        const analytics: TestAnalytics = {
-          questionTimings,
-          answerChanges: new Array(questions.length).fill(0),
-          struggledQuestions: questions.filter((_, i) => !isCorrect[i]).map(q => q.id),
-          confidenceScores: new Array(questions.length).fill(3),
-          categoryPerformance: [{
-            category: category as QuestionCategory || 'road-signs',
-            score: Math.round((score / questions.length) * 100),
-            timeSpent,
-            questionsCount: questions.length,
-            averageConfidence: 3,
-          }],
-        };
-        
-        await submitTestResult(testResult, metadata, analytics);
-        
-        // Update study progress
         await updateStudyProgress(category as string, questions.length);
         await updateStudyStreak();
         
-        // Update daily goal
         const { updateDailyGoalProgress } = await import('@/components/daily-goal');
         await updateDailyGoalProgress(questions.length);
       } catch (error) {
@@ -129,7 +98,7 @@ export default function PracticeScreen() {
       
       Alert.alert(
         'Practice Complete!',
-        `You scored ${score}/${questions.length}`,
+        `You scored ${finalScore}/${questions.length}`,
         [{ text: 'OK', onPress: () => router.push('/') }]
       );
     }

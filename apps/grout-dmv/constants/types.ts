@@ -8,6 +8,7 @@ export interface Question {
   id: string;
   stateCode: string;
   category: QuestionCategory;
+  testType?: string;
   question: string;
   options: string[];
   correctAnswer: number;
@@ -30,6 +31,7 @@ export interface TestResult {
   totalQuestions: number;
   correctAnswers: number;
   category: QuestionCategory;
+  licenseTestType?: string;
   completedAt: Date;
   timeSpent: number;
   questions: Question[];

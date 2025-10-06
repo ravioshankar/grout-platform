@@ -11,6 +11,7 @@ import { TestResult } from '@/constants/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
+import { initDatabase, runMigrations } from '@/utils/database';
 
 const { width } = Dimensions.get('window');
 
@@ -21,7 +22,13 @@ export default function HomeScreen() {
   const currentScheme = isDark ? 'dark' : 'light';
 
   useEffect(() => {
-    loadDashboardData();
+    const init = async () => {
+      await initDatabase();
+      // Run migrations to ensure all tables exist
+      await runMigrations();
+      loadDashboardData();
+    };
+    init();
   }, []);
 
   const loadDashboardData = async () => {

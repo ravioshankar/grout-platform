@@ -1,15 +1,19 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TestResult } from '@/constants/types';
+import { initDatabase, saveTestResult as dbSaveTestResult, getTestResults as dbGetTestResults, clearAllData } from './database';
 
-const STORAGE_KEYS = {
-  TEST_RESULTS: 'dmv_test_results',
+let initialized = false;
+
+const ensureInitialized = async () => {
+  if (!initialized) {
+    await initDatabase();
+    initialized = true;
+  }
 };
 
 export const saveTestResult = async (result: TestResult): Promise<void> => {
   try {
-    const existingResults = await getTestResults();
-    const updatedResults = [...existingResults, result];
-    await AsyncStorage.setItem(STORAGE_KEYS.TEST_RESULTS, JSON.stringify(updatedResults));
+    await ensureInitialized();
+    await dbSaveTestResult(result);
   } catch (error) {
     console.error('Error saving test result:', error);
   }
@@ -17,8 +21,8 @@ export const saveTestResult = async (result: TestResult): Promise<void> => {
 
 export const getTestResults = async (): Promise<TestResult[]> => {
   try {
-    const results = await AsyncStorage.getItem(STORAGE_KEYS.TEST_RESULTS);
-    return results ? JSON.parse(results) : [];
+    await ensureInitialized();
+    return await dbGetTestResults();
   } catch (error) {
     console.error('Error getting test results:', error);
     return [];
@@ -27,7 +31,8 @@ export const getTestResults = async (): Promise<TestResult[]> => {
 
 export const clearTestResults = async (): Promise<void> => {
   try {
-    await AsyncStorage.removeItem(STORAGE_KEYS.TEST_RESULTS);
+    await ensureInitialized();
+    await clearAllData();
   } catch (error) {
     console.error('Error clearing test results:', error);
   }

@@ -5,6 +5,7 @@ import { ThemedView } from '@/components/themed-view';
 import { RoadReadyLogo } from '@/components/logo';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
+import { initDatabase, getSetting } from '@/utils/database';
 
 const { width, height } = Dimensions.get('window');
 
@@ -13,11 +14,24 @@ export default function SplashScreen() {
   const currentScheme = isDark ? 'dark' : 'light';
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      router.replace('/(tabs)');
-    }, 3000);
+    const checkOnboarding = async () => {
+      await initDatabase();
+      const onboardingData = await getSetting('onboarding');
+      const timer = setTimeout(() => {
+        if (onboardingData) {
+          const parsed = JSON.parse(onboardingData);
+          if (parsed.completed) {
+            router.replace('/(tabs)');
+            return;
+          }
+        }
+        router.replace('/onboarding');
+      }, 3000);
 
-    return () => clearTimeout(timer);
+      return () => clearTimeout(timer);
+    };
+    
+    checkOnboarding();
   }, []);
 
   const logoSize = Math.min(width * 0.25, height * 0.12, 120);

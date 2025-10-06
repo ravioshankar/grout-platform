@@ -174,7 +174,7 @@ export function RoadReadyLogo({ size = 40 }: { size?: number }) {
                 <Text style={[styles.title, { 
                   fontSize: Math.max(size * 0.22, 16),
                   fontWeight: 'bold',
-                  // color: titleColor
+                  color: titleColor
                 }]}>
                   RoadReady
                 </Text>

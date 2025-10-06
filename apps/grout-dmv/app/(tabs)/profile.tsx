@@ -11,6 +11,9 @@ import { syncService } from '@/utils/sync-service';
 import { useTheme } from '@/contexts/theme-context';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Colors } from '@/constants/theme';
+import { insertMockData } from '@/utils/mock-data';
+import { runMigrations } from '@/utils/database';
+import Constants from 'expo-constants';
 
 export default function ProfileScreen() {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -38,6 +41,55 @@ export default function ProfileScreen() {
     const result = await syncService.performSync();
     await loadSyncStatus();
     Alert.alert('Sync Complete', `${result.synced} items synced, ${result.failed} failed`);
+  };
+
+  const handleInsertMockData = async () => {
+    Alert.alert(
+      'Insert Mock Data',
+      'This will add 10 mock test results for development testing.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Insert',
+          onPress: async () => {
+            try {
+              const count = await insertMockData();
+              await loadUserData();
+              Alert.alert('Success', `Inserted ${count} mock test results`);
+            } catch (error) {
+              Alert.alert('Error', 'Failed to insert mock data');
+              console.error('Mock data error:', error);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleRunMigrations = async () => {
+    Alert.alert(
+      'Run Database Migrations',
+      'This will ensure all database tables are created properly.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Run',
+          onPress: async () => {
+            try {
+              const success = await runMigrations();
+              if (success) {
+                Alert.alert('Success', 'Database migrations completed successfully');
+              } else {
+                Alert.alert('Error', 'Migrations failed. Check console for details.');
+              }
+            } catch (error) {
+              Alert.alert('Error', 'Failed to run migrations');
+              console.error('Migration error:', error);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const loadUserData = async () => {
@@ -262,6 +314,32 @@ export default function ProfileScreen() {
           <ThemedText style={styles.settingText}>About</ThemedText>
           <Ionicons name="chevron-forward" size={20} color="#999" />
         </TouchableOpacity>
+
+        {__DEV__ && (
+          <>
+            <TouchableOpacity 
+              style={[styles.settingItem, { backgroundColor: Colors[currentScheme].cardBackground }]}
+              onPress={handleRunMigrations}
+              activeOpacity={0.7}
+              hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+            >
+              <Ionicons name="construct-outline" size={24} color="#007AFF" />
+              <ThemedText style={styles.settingText}>Run Migrations (Dev)</ThemedText>
+              <Ionicons name="chevron-forward" size={20} color="#999" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.settingItem, { backgroundColor: Colors[currentScheme].cardBackground }]}
+              onPress={handleInsertMockData}
+              activeOpacity={0.7}
+              hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+            >
+              <Ionicons name="flask-outline" size={24} color="#FF9500" />
+              <ThemedText style={styles.settingText}>Insert Mock Data (Dev)</ThemedText>
+              <Ionicons name="chevron-forward" size={20} color="#999" />
+            </TouchableOpacity>
+          </>
+        )}
 
         {testResults.length > 0 && (
           <TouchableOpacity 

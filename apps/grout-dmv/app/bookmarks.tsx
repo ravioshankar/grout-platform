@@ -5,9 +5,7 @@ import { ThemedView } from '@/components/themed-view';
 import { AppHeader } from '@/components/app-header';
 import { Question } from '@/constants/types';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const BOOKMARKS_KEY = 'dmv_bookmarked_questions';
+import { getBookmarks, removeBookmark as dbRemoveBookmark, clearAllData } from '@/utils/database';
 
 export default function BookmarksScreen() {
   const [bookmarkedQuestions, setBookmarkedQuestions] = useState<Question[]>([]);
@@ -18,15 +16,8 @@ export default function BookmarksScreen() {
 
   const loadBookmarks = async () => {
     try {
-      const bookmarks = await AsyncStorage.getItem(BOOKMARKS_KEY);
-      if (bookmarks) {
-        try {
-          setBookmarkedQuestions(JSON.parse(bookmarks));
-        } catch (parseError) {
-          console.error('Error parsing bookmarks JSON:', parseError);
-          setBookmarkedQuestions([]);
-        }
-      }
+      const bookmarks = await getBookmarks();
+      setBookmarkedQuestions(bookmarks as Question[]);
     } catch (error) {
       console.error('Error loading bookmarks:', error);
     }
@@ -34,9 +25,8 @@ export default function BookmarksScreen() {
 
   const removeBookmark = async (questionId: string) => {
     try {
-      const updatedBookmarks = bookmarkedQuestions.filter(q => q.id !== questionId);
-      await AsyncStorage.setItem(BOOKMARKS_KEY, JSON.stringify(updatedBookmarks));
-      setBookmarkedQuestions(updatedBookmarks);
+      await dbRemoveBookmark(questionId);
+      setBookmarkedQuestions(bookmarkedQuestions.filter(q => q.id !== questionId));
     } catch (error) {
       console.error('Error removing bookmark:', error);
     }
@@ -53,7 +43,7 @@ export default function BookmarksScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.removeItem(BOOKMARKS_KEY);
+              await clearAllData();
               setBookmarkedQuestions([]);
             } catch (error) {
               console.error('Error clearing bookmarks:', error);

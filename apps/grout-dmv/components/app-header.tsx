@@ -30,7 +30,7 @@ export function AppHeader({ title, showLogo = true }: AppHeaderProps) {
 const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingVertical: 32,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     shadowColor: '#000',

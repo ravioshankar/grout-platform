@@ -8,8 +8,6 @@ import { US_STATES } from '@/constants/states';
 import { Question, QuestionCategory, TestResult } from '@/constants/types';
 import { getRandomQuestions } from '@/constants/questions';
 import { saveTestResult } from '@/utils/storage';
-import { submitTestResult, TestMetadata, TestAnalytics } from '@/utils/database';
-import { Platform, Dimensions } from 'react-native';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
 
@@ -111,36 +109,6 @@ export default function TestScreen() {
     
     try {
       await saveTestResult(result);
-      
-      // Submit to database with analytics
-      const metadata: TestMetadata = {
-        appVersion: '1.0.0',
-        platform: Platform.OS as 'ios' | 'android',
-        deviceInfo: {
-          screenSize: `${Dimensions.get('window').width}x${Dimensions.get('window').height}`,
-          os: Platform.Version?.toString(),
-        },
-        sessionId: `session_${startTime}`,
-        testDuration: timeSpent,
-        pauseCount,
-        hintsUsed: 0,
-      };
-      
-      const analytics: TestAnalytics = {
-        questionTimings,
-        answerChanges: new Array(questions.length).fill(0),
-        struggledQuestions: questions.filter((_, i) => !isCorrect[i]).map(q => q.id),
-        confidenceScores: new Array(questions.length).fill(3),
-        categoryPerformance: [{
-          category: 'road-signs',
-          score: Math.round((score / questions.length) * 100),
-          timeSpent,
-          questionsCount: questions.length,
-          averageConfidence: 3,
-        }],
-      };
-      
-      await submitTestResult(result, metadata, analytics);
     } catch (error) {
       console.error('Error saving test results:', error);
     }

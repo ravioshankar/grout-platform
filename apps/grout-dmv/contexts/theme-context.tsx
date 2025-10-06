@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Animated } from 'react-native';
+import { initDatabase, saveSetting, getSetting } from '@/utils/database';
 
 type Theme = 'light' | 'dark' | 'auto';
 
@@ -12,8 +12,6 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
-const THEME_STORAGE_KEY = 'dmv_app_theme';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('auto');
@@ -27,7 +25,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const loadTheme = async () => {
     try {
-      const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+      await initDatabase();
+      const savedTheme = await getSetting('theme');
       if (savedTheme) {
         setThemeState(savedTheme as Theme);
       }
@@ -46,7 +45,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       }).start();
       
       setThemeState(newTheme);
-      await AsyncStorage.setItem(THEME_STORAGE_KEY, newTheme);
+      await saveSetting('theme', newTheme);
     } catch (error) {
       console.error('Error saving theme:', error);
     }

@@ -1,229 +1,330 @@
-import { TestResult, QuestionCategory } from '@/constants/types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 
-export interface TestSubmission {
-  id: string;
-  userId?: string;
-  deviceId: string;
-  testResult: TestResult;
-  metadata: TestMetadata;
-  analytics: TestAnalytics;
-  submittedAt: Date;
-  synced: boolean;
-  syncAttempts: number;
-  lastSyncAttempt?: Date;
-}
+let db: SQLite.SQLiteDatabase | null = null;
 
-export interface TestMetadata {
-  appVersion: string;
-  platform: 'ios' | 'android' | 'web';
-  deviceInfo: {
-    model?: string;
-    os?: string;
-    screenSize?: string;
-  };
-  sessionId: string;
-  testDuration: number;
-  pauseCount: number;
-  hintsUsed: number;
-}
-
-export interface TestAnalytics {
-  questionTimings: number[];
-  answerChanges: number[];
-  difficultyRating?: number;
-  userFeedback?: string;
-  struggledQuestions: string[];
-  confidenceScores: number[];
-  categoryPerformance: CategoryPerformance[];
-}
-
-export interface CategoryPerformance {
-  category: QuestionCategory;
-  score: number;
-  timeSpent: number;
-  questionsCount: number;
-  averageConfidence: number;
-}
-
-export interface DatabaseResponse {
-  success: boolean;
-  id?: string;
-  error?: string;
-  timestamp: Date;
-}
-
-const SUBMISSIONS_KEY = 'dmv_test_submissions';
-const SYNC_CONFIG_KEY = 'dmv_sync_config';
-const API_BASE_URL = 'https://your-api-endpoint.com/api';
-
-interface SyncConfig {
-  lastSyncTime: Date;
-  syncInterval: number; // minutes
-  autoSync: boolean;
-}
-
-export const submitTestResult = async (
-  testResult: TestResult,
-  metadata: TestMetadata,
-  analytics: TestAnalytics
-): Promise<DatabaseResponse> => {
+export const initDatabase = async () => {
   try {
-    const submission: TestSubmission = {
-      id: `submission_${Date.now()}`,
-      deviceId: await getDeviceId(),
-      testResult,
-      metadata,
-      analytics,
-      submittedAt: new Date(),
-      synced: false,
-      syncAttempts: 0,
-    };
+    if (db) return db;
+    
+    db = await SQLite.openDatabaseAsync('roadready.db');
+    
+    if (!db) {
+      throw new Error('Failed to open database');
+    }
 
-    // Store locally
-    const submissions = await getSubmissions();
-    submissions.push(submission);
-    await AsyncStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(submissions));
+    // Create all tables
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS user_profile (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      selected_state TEXT NOT NULL,
+      selected_test_type TEXT NOT NULL,
+      theme TEXT DEFAULT 'auto',
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
 
-    // Try immediate sync
-    await syncWithBackend();
+    CREATE TABLE IF NOT EXISTS settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT UNIQUE NOT NULL,
+      value TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
 
-    return {
-      success: true,
-      id: submission.id,
-      timestamp: new Date(),
-    };
+    CREATE TABLE IF NOT EXISTS test_results (
+      id TEXT PRIMARY KEY,
+      state_code TEXT NOT NULL,
+      score INTEGER NOT NULL,
+      total_questions INTEGER NOT NULL,
+      correct_answers INTEGER NOT NULL,
+      category TEXT NOT NULL,
+      license_test_type TEXT,
+      completed_at INTEGER NOT NULL,
+      time_spent INTEGER NOT NULL,
+      test_type TEXT NOT NULL,
+      questions TEXT NOT NULL,
+      user_answers TEXT NOT NULL,
+      is_correct TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS bookmarks (
+      id TEXT PRIMARY KEY,
+      question TEXT NOT NULL,
+      options TEXT NOT NULL,
+      correct_answer INTEGER NOT NULL,
+      category TEXT NOT NULL,
+      state_code TEXT NOT NULL,
+      explanation TEXT,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS study_plan (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      day INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      category TEXT NOT NULL,
+      tasks TEXT NOT NULL,
+      estimated_time INTEGER NOT NULL,
+      completed INTEGER DEFAULT 0,
+      progress INTEGER DEFAULT 0,
+      completed_tasks TEXT,
+      updated_at INTEGER NOT NULL
+    );
+    `);
+
+    return db;
   } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date(),
-    };
+    console.error('Database initialization error:', error);
+    throw error;
   }
 };
 
-export const getSubmissions = async (): Promise<TestSubmission[]> => {
+export const getDatabase = () => {
+  if (!db) {
+    console.error('Database not initialized. Call initDatabase first.');
+    throw new Error('Database not initialized. Call initDatabase first.');
+  }
+  return db;
+};
+
+export const saveUserProfile = async (profile: { selectedState: string; selectedTestType: string; theme?: string }) => {
   try {
-    const data = await AsyncStorage.getItem(SUBMISSIONS_KEY);
-    return data ? JSON.parse(data) : [];
+    const database = getDatabase();
+    const now = Date.now();
+    
+    await database.runAsync(
+      'INSERT INTO user_profile (selected_state, selected_test_type, theme, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      [profile.selectedState, profile.selectedTestType, profile.theme || 'auto', now, now]
+    );
   } catch (error) {
+    console.error('Error saving user profile:', error);
+    throw error;
+  }
+};
+
+export const updateUserTheme = async (theme: string) => {
+  try {
+    const database = getDatabase();
+    const now = Date.now();
+    
+    // Check if profile exists
+    const profile = await database.getFirstAsync<{ id: number }>('SELECT id FROM user_profile ORDER BY id DESC LIMIT 1');
+    
+    if (profile) {
+      // Update existing profile
+      await database.runAsync(
+        'UPDATE user_profile SET theme = ?, updated_at = ? WHERE id = ?',
+        [theme, now, profile.id]
+      );
+    } else {
+      // Create new profile with default values
+      await database.runAsync(
+        'INSERT INTO user_profile (selected_state, selected_test_type, theme, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+        ['CA', 'class-c', theme, now, now]
+      );
+    }
+  } catch (error) {
+    console.error('Error updating user theme:', error);
+    throw error;
+  }
+};
+
+export const getUserProfile = async () => {
+  try {
+    const database = getDatabase();
+    const result = await database.getFirstAsync<{
+      id: number;
+      selected_state: string;
+      selected_test_type: string;
+      theme: string;
+      created_at: number;
+      updated_at: number;
+    }>('SELECT * FROM user_profile ORDER BY id DESC LIMIT 1');
+    
+    return result ? {
+      id: result.id.toString(),
+      selectedState: result.selected_state,
+      selectedTestType: result.selected_test_type,
+      theme: result.theme || 'auto',
+      createdAt: new Date(result.created_at),
+      updatedAt: new Date(result.updated_at),
+    } : null;
+  } catch (error) {
+    console.error('Error getting user profile:', error);
+    return null;
+  }
+};
+
+export const saveTestResult = async (result: any) => {
+  try {
+    const database = getDatabase();
+    
+    await database.runAsync(
+      `INSERT INTO test_results (
+        id, state_code, score, total_questions, correct_answers, category,
+        license_test_type, completed_at, time_spent, test_type, questions,
+        user_answers, is_correct
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        result.id,
+        result.stateCode,
+        result.score,
+        result.totalQuestions,
+        result.correctAnswers,
+        result.category,
+        result.licenseTestType || null,
+        result.completedAt.getTime(),
+        result.timeSpent,
+        result.testType,
+        JSON.stringify(result.questions),
+        JSON.stringify(result.userAnswers),
+        JSON.stringify(result.isCorrect),
+      ]
+    );
+  } catch (error) {
+    console.error('Error saving test result:', error);
+    throw error;
+  }
+};
+
+export const getTestResults = async () => {
+  try {
+    const database = getDatabase();
+    const results = await database.getAllAsync<any>('SELECT * FROM test_results ORDER BY completed_at DESC');
+    
+    return results.map((r: any) => ({
+      id: r.id,
+      stateCode: r.state_code,
+      score: r.score,
+      totalQuestions: r.total_questions,
+      correctAnswers: r.correct_answers,
+      category: r.category,
+      licenseTestType: r.license_test_type,
+      completedAt: new Date(r.completed_at),
+      timeSpent: r.time_spent,
+      testType: r.test_type,
+      questions: JSON.parse(r.questions),
+      userAnswers: JSON.parse(r.user_answers),
+      isCorrect: JSON.parse(r.is_correct),
+    }));
+  } catch (error) {
+    console.error('Error getting test results:', error);
     return [];
   }
 };
 
-export const syncWithBackend = async (): Promise<{ synced: number; failed: number }> => {
+export const saveBookmark = async (question: any) => {
+  const database = getDatabase();
+  const now = Date.now();
+  
+  await database.runAsync(
+    `INSERT OR REPLACE INTO bookmarks (
+      id, question, options, correct_answer, category, state_code, explanation, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      question.id,
+      question.question,
+      JSON.stringify(question.options),
+      question.correctAnswer,
+      question.category,
+      question.stateCode,
+      question.explanation || null,
+      now,
+    ]
+  );
+};
+
+export const getBookmarks = async () => {
+  const database = getDatabase();
+  const bookmarks = await database.getAllAsync<any>('SELECT * FROM bookmarks ORDER BY created_at DESC');
+  
+  return bookmarks.map((b: any) => ({
+    id: b.id,
+    question: b.question,
+    options: JSON.parse(b.options),
+    correctAnswer: b.correct_answer,
+    category: b.category,
+    stateCode: b.state_code,
+    explanation: b.explanation,
+  }));
+};
+
+export const removeBookmark = async (questionId: string) => {
+  const database = getDatabase();
+  await database.runAsync('DELETE FROM bookmarks WHERE id = ?', [questionId]);
+};
+
+export const saveSetting = async (key: string, value: string) => {
   try {
-    const submissions = await getSubmissions();
-    const unsyncedSubmissions = submissions.filter(s => !s.synced);
+    const database = getDatabase();
+    const now = Date.now();
     
-    let synced = 0;
-    let failed = 0;
+    await database.runAsync(
+      'INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, ?)',
+      [key, value, now]
+    );
+  } catch (error) {
+    console.error('Error saving setting:', error);
+    throw error;
+  }
+};
 
-    for (const submission of unsyncedSubmissions) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/test-results`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(submission),
-        });
+export const getSetting = async (key: string): Promise<string | null> => {
+  try {
+    const database = getDatabase();
+    const result = await database.getFirstAsync<{ value: string }>(
+      'SELECT value FROM settings WHERE key = ?',
+      [key]
+    );
+    return result?.value || null;
+  } catch (error) {
+    console.error('Error getting setting:', error);
+    return null;
+  }
+};
 
-        if (response.ok) {
-          submission.synced = true;
-          synced++;
-        } else {
-          submission.syncAttempts++;
-          submission.lastSyncAttempt = new Date();
-          failed++;
-        }
-      } catch (error) {
-        submission.syncAttempts++;
-        submission.lastSyncAttempt = new Date();
-        failed++;
-      }
-    }
+export const getAllSettings = async (): Promise<Record<string, string>> => {
+  try {
+    const database = getDatabase();
+    const results = await database.getAllAsync<{ key: string; value: string }>(
+      'SELECT key, value FROM settings'
+    );
+    return results.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {});
+  } catch (error) {
+    console.error('Error getting all settings:', error);
+    return {};
+  }
+};
 
-    // Update local storage
-    await AsyncStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(submissions));
+export const runMigrations = async () => {
+  try {
+    const database = getDatabase();
     
-    // Update sync config
-    const syncConfig: SyncConfig = {
-      lastSyncTime: new Date(),
-      syncInterval: 30, // 30 minutes
-      autoSync: true,
-    };
-    await AsyncStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(syncConfig));
-
-    return { synced, failed };
+    // Ensure settings table exists
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS settings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        key TEXT UNIQUE NOT NULL,
+        value TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+    `);
+    
+    console.log('Migrations completed successfully');
+    return true;
   } catch (error) {
-    return { synced: 0, failed: 0 };
+    console.error('Migration error:', error);
+    return false;
   }
 };
 
-export const getUnsyncedCount = async (): Promise<number> => {
-  try {
-    const submissions = await getSubmissions();
-    return submissions.filter(s => !s.synced).length;
-  } catch (error) {
-    console.error('Error getting unsynced count:', error);
-    return 0;
-  }
-};
-
-export const clearSyncedData = async (): Promise<void> => {
-  try {
-    const submissions = await getSubmissions();
-    const unsyncedSubmissions = submissions.filter(s => !s.synced);
-    await AsyncStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(unsyncedSubmissions));
-  } catch (error) {
-    console.error('Error clearing synced data:', error);
-  }
-};
-
-export const initPeriodicSync = (): NodeJS.Timeout => {
-  return setInterval(async () => {
-    const config = await getSyncConfig();
-    if (config.autoSync) {
-      await syncWithBackend();
-    }
-  }, 30 * 60 * 1000); // 30 minutes
-};
-
-const getSyncConfig = async (): Promise<SyncConfig> => {
-  try {
-    const config = await AsyncStorage.getItem(SYNC_CONFIG_KEY);
-    if (config) {
-      try {
-        return JSON.parse(config);
-      } catch (parseError) {
-        console.error('Error parsing sync config:', parseError);
-      }
-    }
-    return {
-      lastSyncTime: new Date(0),
-      syncInterval: 30,
-      autoSync: true,
-    };
-  } catch (error) {
-    console.error('Error loading sync config:', error);
-    return {
-      lastSyncTime: new Date(0),
-      syncInterval: 30,
-      autoSync: true,
-    };
-  }
-};
-
-const getDeviceId = async (): Promise<string> => {
-  try {
-    let deviceId = await AsyncStorage.getItem('device_id');
-    if (!deviceId) {
-      deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      await AsyncStorage.setItem('device_id', deviceId);
-    }
-    return deviceId;
-  } catch (error) {
-    return `fallback_${Date.now()}`;
-  }
+export const clearAllData = async () => {
+  const database = getDatabase();
+  await database.execAsync(`
+    DELETE FROM user_profile;
+    DELETE FROM test_results;
+    DELETE FROM bookmarks;
+    DELETE FROM study_plan;
+    DELETE FROM settings;
+  `);
 };

@@ -1,18 +1,15 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
+import { getSetting, saveSetting } from '@/utils/database';
 
 interface DailyGoalProps {
   onGoalComplete?: () => void;
 }
-
-const DAILY_GOAL_KEY = 'dmv_daily_goal';
-const GOAL_DATE_KEY = 'dmv_goal_date';
 
 export function DailyGoal({ onGoalComplete }: DailyGoalProps) {
   const { isDark } = useTheme();
@@ -28,10 +25,10 @@ export function DailyGoal({ onGoalComplete }: DailyGoalProps) {
   const loadDailyProgress = async () => {
     try {
       const today = new Date().toDateString();
-      const goalDate = await AsyncStorage.getItem(GOAL_DATE_KEY);
+      const goalDate = await getSetting('daily_goal_date');
       
       if (goalDate === today) {
-        const progress = await AsyncStorage.getItem(DAILY_GOAL_KEY);
+        const progress = await getSetting('daily_goal_progress');
         const answered = progress ? parseInt(progress) : 0;
         setQuestionsAnswered(answered);
         setIsCompleted(answered >= dailyGoal);
@@ -39,8 +36,8 @@ export function DailyGoal({ onGoalComplete }: DailyGoalProps) {
         // New day, reset progress
         setQuestionsAnswered(0);
         setIsCompleted(false);
-        await AsyncStorage.setItem(GOAL_DATE_KEY, today);
-        await AsyncStorage.setItem(DAILY_GOAL_KEY, '0');
+        await saveSetting('daily_goal_date', today);
+        await saveSetting('daily_goal_progress', '0');
       }
     } catch (error) {
       console.error('Error loading daily progress:', error);
@@ -55,7 +52,7 @@ export function DailyGoal({ onGoalComplete }: DailyGoalProps) {
       const completed = total >= dailyGoal;
       setIsCompleted(completed);
       
-      await AsyncStorage.setItem(DAILY_GOAL_KEY, total.toString());
+      await saveSetting('daily_goal_progress', total.toString());
       
       if (completed && !isCompleted && onGoalComplete) {
         onGoalComplete();
@@ -81,7 +78,7 @@ export function DailyGoal({ onGoalComplete }: DailyGoalProps) {
     <ThemedView style={[styles.container, { backgroundColor: Colors[currentScheme].cardBackground }]}>
       <ThemedView style={styles.header}>
         <ThemedView style={styles.titleContainer}>
-          <Ionicons name="target" size={20} color={getProgressColor()} />
+          <Ionicons name="radio-button-on" size={20} color={getProgressColor()} />
           <ThemedText type="defaultSemiBold" style={styles.title}>
             Daily Goal
           </ThemedText>
@@ -122,13 +119,13 @@ export function DailyGoal({ onGoalComplete }: DailyGoalProps) {
 export const updateDailyGoalProgress = async (questionsAnswered: number) => {
   try {
     const today = new Date().toDateString();
-    const goalDate = await AsyncStorage.getItem(GOAL_DATE_KEY);
+    const goalDate = await getSetting('daily_goal_date');
     
     if (goalDate === today) {
-      const currentProgress = await AsyncStorage.getItem(DAILY_GOAL_KEY);
+      const currentProgress = await getSetting('daily_goal_progress');
       const current = currentProgress ? parseInt(currentProgress) : 0;
       const newTotal = current + questionsAnswered;
-      await AsyncStorage.setItem(DAILY_GOAL_KEY, newTotal.toString());
+      await saveSetting('daily_goal_progress', newTotal.toString());
     }
   } catch (error) {
     console.error('Error updating daily goal progress:', error);
