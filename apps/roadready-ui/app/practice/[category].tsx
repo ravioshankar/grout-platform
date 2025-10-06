@@ -8,6 +8,7 @@ import { getQuestionsByCategory } from '@/constants/questions';
 import { Question, QuestionCategory, TestResult } from '@/constants/types';
 import { saveTestResult } from '@/utils/storage';
 import { updateStudyProgress, updateStudyStreak } from '@/utils/study-progress';
+import { updateDailyGoalProgress } from '@/components/daily-goal';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
 
@@ -89,8 +90,6 @@ export default function PracticeScreen() {
         await saveTestResult(testResult);
         await updateStudyProgress(category as string, questions.length);
         await updateStudyStreak();
-        
-        const { updateDailyGoalProgress } = await import('@/components/daily-goal');
         await updateDailyGoalProgress(questions.length);
       } catch (error) {
         console.error('Error saving practice results:', error);

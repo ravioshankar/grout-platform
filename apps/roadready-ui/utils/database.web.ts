@@ -1,4 +1,4 @@
-import { initIndexedDB, getAll, put, remove, clear } from './indexeddb';
+import { initIndexedDB, getAll, getOne, put, remove, clear } from './indexeddb';
 
 let initialized = false;
 
@@ -106,7 +106,6 @@ export const saveSetting = async (key: string, value: string) => {
 
 export const getSetting = async (key: string): Promise<string | null> => {
   try {
-    const { getOne } = await import('./indexeddb');
     const result = await getOne<{ key: string; value: string }>('settings', key);
     return result?.value || null;
   } catch (error) {
