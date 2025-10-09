@@ -8,6 +8,26 @@ FastAPI backend for RoadReady DMV application.
 pip install -r requirements.txt
 ```
 
+## Database Setup
+
+**Start PostgreSQL 16:**
+```bash
+docker-compose up -d
+```
+
+**Prisma-like commands:**
+```bash
+./roadready db:push              # Sync schema (like prisma db push)
+./roadready db:revision "name"   # Create migration (like prisma migrate dev)
+./roadready db:migrate           # Apply migrations (like prisma migrate deploy)
+```
+
+**Seed database:**
+```bash
+python scripts/seed.py           # Add sample data
+python scripts/seed.py --clear   # Clear all data
+```
+
 ## Run
 
 ```bash
@@ -18,6 +38,9 @@ pip install -r requirements.txt
 
 - `./roadready start` - Start development server with auto-reload
 - `./roadready console` - Interactive Python console
+- `./roadready db:push` - Sync database schema (Prisma-like)
+- `./roadready db:revision "name"` - Create migration
+- `./roadready db:migrate` - Apply migrations
 
 ## Project Structure
 

@@ -8,9 +8,22 @@ def start():
 def console():
     subprocess.run(["python3", "-i", "-c", "from app.main import app; print('RoadReady API Console')"])
 
+def db_migrate():
+    subprocess.run(["alembic", "upgrade", "head"])
+
+def db_revision():
+    msg = sys.argv[2] if len(sys.argv) > 2 else "auto"
+    subprocess.run(["alembic", "revision", "--autogenerate", "-m", msg])
+
+def db_push():
+    subprocess.run(["python3", "-c", "from app.core.database import init_db; init_db(); print('Database schema synced')"])
+
 commands = {
     "start": start,
     "console": console,
+    "db:migrate": db_migrate,
+    "db:revision": db_revision,
+    "db:push": db_push,
 }
 
 if __name__ == "__main__":
