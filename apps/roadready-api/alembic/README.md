@@ -48,3 +48,5 @@ alembic history --verbose
 ## Migration Files
 
 - `20251009_174822_initial_user_table.py` - Initial User table with email, state, test_type fields
+- `20251009_180000_add_password_auth.py` - Add hashed_password and is_active fields for authentication
+- `20251009_181500_add_oauth_fields.py` - Add oauth_provider and oauth_provider_id for SSO support

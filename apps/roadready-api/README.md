@@ -28,6 +28,9 @@ python scripts/seed.py           # Add sample data
 python scripts/seed.py --clear   # Clear all data
 ```
 
+**OAuth Setup:**
+See [docs/OAUTH_SETUP.md](docs/OAUTH_SETUP.md) for Google and Facebook OAuth configuration
+
 ## Run
 
 ```bash

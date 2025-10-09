@@ -1,15 +1,37 @@
-from sqlmodel import SQLModel
+from sqlmodel import SQLModel, Field
 from datetime import datetime
+from typing import Optional
 
 class UserCreate(SQLModel):
-    email: str
-    state: str
-    test_type: str
+    email: str = Field(description="User's email address")
+    password: Optional[str] = Field(default=None, description="User password (required for email signup)", min_length=8)
+    state: str = Field(description="US state code", max_length=2)
+    test_type: str = Field(description="Type of DMV test")
+    
+    model_config = {
+        "json_schema_extra": {
+            "examples": [{
+                "email": "john.doe@example.com",
+                "password": "SecurePass123!",
+                "state": "CA",
+                "test_type": "car"
+            }]
+        }
+    }
 
 class UserRead(SQLModel):
-    id: int
+    id: int = Field(description="Unique user identifier")
+    email: str = Field(description="User's email address")
+    state: str = Field(description="US state code")
+    test_type: str = Field(description="Type of DMV test (car, motorcycle, cdl)")
+    is_active: bool = Field(description="Account active status")
+    created_at: datetime = Field(description="Account creation timestamp")
+    updated_at: datetime = Field(description="Last update timestamp")
+
+class Token(SQLModel):
+    access_token: str
+    token_type: str = "bearer"
+
+class LoginRequest(SQLModel):
     email: str
-    state: str
-    test_type: str
-    created_at: datetime
-    updated_at: datetime
+    password: str
