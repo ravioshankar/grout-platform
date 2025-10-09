@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
-from datetime import timedelta
+from datetime import timedelta, datetime
 from app.core.database import get_db
 from app.core.security import verify_password, create_access_token, get_current_user, get_password_hash
 from app.core.oauth import oauth
@@ -87,7 +87,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
     "/me",
     response_model=UserRead,
     summary="Update user profile",
-    description="Update current user's profile information (state, test_type)",
+    description="Update current user's profile information (first_name, last_name, state, test_type)",
     responses={
         200: {"description": "Profile updated successfully"},
         401: {"description": "Not authenticated"},
@@ -98,6 +98,10 @@ async def update_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    if profile_data.first_name is not None:
+        current_user.first_name = profile_data.first_name
+    if profile_data.last_name is not None:
+        current_user.last_name = profile_data.last_name
     if profile_data.state is not None:
         current_user.state = profile_data.state
     if profile_data.test_type is not None:

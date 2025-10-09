@@ -5,9 +5,11 @@ import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/contexts/theme-context';
+import { useInactivityLogout } from '@/hooks/use-inactivity-logout';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function TabLayout() {
+  useInactivityLogout();
   const colorScheme = useColorScheme();
   const { isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
@@ -55,7 +57,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <Ionicons name="analytics" size={28} color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons name="person" size={28} color={color} />,
         }}
       />
     </Tabs>

@@ -9,7 +9,9 @@ import { State } from '@/constants/types';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
 import { TEST_TYPES, TEST_CATEGORIES, TestType } from '@/constants/test-types';
-import { saveSetting } from '@/utils/database';
+import { saveSetting, getSetting } from '@/utils/database';
+
+const API_BASE_URL = 'http://localhost:8000';
 
 export default function OnboardingScreen() {
   const { isDark } = useTheme();
@@ -25,6 +27,22 @@ export default function OnboardingScreen() {
     }
 
     try {
+      const authToken = await getSetting('auth_token');
+      
+      if (authToken) {
+        await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            state: selectedState.code,
+            test_type: selectedTestType.id,
+          }),
+        });
+      }
+
       const onboardingData = {
         completed: true,
         selectedState: selectedState.code,

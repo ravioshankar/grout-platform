@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, Alert, RefreshControl, ActivityIndicator } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, Alert, RefreshControl, ActivityIndicator, Image, TextInput } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { AppHeader } from '@/components/app-header';
 import { getTestResults, clearTestResults } from '@/utils/storage';
-import { getUserProfile } from '@/utils/database';
+import { getUserProfile, getSetting, saveSetting, deleteSetting } from '@/utils/database';
 import { TestResult } from '@/constants/types';
 import { Ionicons } from '@expo/vector-icons';
 import { syncService } from '@/utils/sync-service';
@@ -16,12 +17,17 @@ import { insertMockData } from '@/utils/mock-data';
 import { runMigrations } from '@/utils/database';
 import Constants from 'expo-constants';
 
+const API_BASE_URL = 'http://localhost:8000';
+
 export default function ProfileScreen() {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [unsyncedCount, setUnsyncedCount] = useState(0);
-  const { theme, setTheme, isDark } = useTheme();
+  const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const { isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
 
   const stats = useMemo(() => {
@@ -35,63 +41,94 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     loadUserData();
-    loadSyncStatus();
+    loadUserProfile();
   }, []);
 
-  const loadSyncStatus = async () => {
-    const count = await syncService.getUnsyncedCount();
-    setUnsyncedCount(count);
+  const loadUserProfile = async () => {
+    try {
+      const authToken = await getSetting('auth_token');
+      if (!authToken) {
+        router.replace('/login');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+        headers: { 'Authorization': `Bearer ${authToken}` },
+      });
+
+      if (!response.ok) {
+        await deleteSetting('auth_token');
+        await deleteSetting('user_email');
+        router.replace('/login');
+        return;
+      }
+
+      const userData = await response.json();
+      setUserEmail(userData.email || '');
+      setUserName(userData.first_name && userData.last_name 
+        ? `${userData.first_name} ${userData.last_name}` 
+        : userData.first_name || userData.last_name || '');
+      
+      const avatar = await getSetting('user_avatar');
+      setAvatarUri(avatar);
+    } catch (error) {
+      console.error('Failed to load user profile:', error);
+    }
   };
 
-  const handleManualSync = async () => {
-    const result = await syncService.performSync();
-    await loadSyncStatus();
-    Alert.alert('Sync Complete', `${result.synced} items synced, ${result.failed} failed`);
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      setAvatarUri(result.assets[0].uri);
+      await saveSetting('user_avatar', result.assets[0].uri);
+    }
   };
 
-  const handleInsertMockData = async () => {
+  const handleSaveName = async () => {
+    try {
+      const authToken = await getSetting('auth_token');
+      const names = userName.trim().split(' ');
+      const firstName = names[0] || '';
+      const lastName = names.slice(1).join(' ') || '';
+
+      await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+        }),
+      });
+
+      setIsEditingName(false);
+    } catch (error) {
+      console.error('Failed to save name:', error);
+      Alert.alert('Error', 'Failed to save name');
+    }
+  };
+
+  const handleLogout = () => {
     Alert.alert(
-      'Insert Mock Data',
-      'This will add 10 mock test results for development testing.',
+      'Logout',
+      'Are you sure you want to logout?',
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Insert',
+        { 
+          text: 'Logout', 
+          style: 'destructive',
           onPress: async () => {
-            try {
-              const count = await insertMockData();
-              await loadUserData();
-              Alert.alert('Success', `Inserted ${count} mock test results`);
-            } catch (error) {
-              Alert.alert('Error', 'Failed to insert mock data');
-              console.error('Mock data error:', error);
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  const handleRunMigrations = async () => {
-    Alert.alert(
-      'Run Database Migrations',
-      'This will ensure all database tables are created properly.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Run',
-          onPress: async () => {
-            try {
-              const success = await runMigrations();
-              if (success) {
-                Alert.alert('Success', 'Database migrations completed successfully');
-              } else {
-                Alert.alert('Error', 'Migrations failed. Check console for details.');
-              }
-            } catch (error) {
-              Alert.alert('Error', 'Failed to run migrations');
-              console.error('Migration error:', error);
-            }
+            await deleteSetting('auth_token');
+            await deleteSetting('user_email');
+            router.replace('/login');
           }
         }
       ]
@@ -114,49 +151,11 @@ export default function ProfileScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadUserData();
-    await loadSyncStatus();
+    await loadUserProfile();
     setRefreshing(false);
   }, [loadUserData]);
 
-  const handleClearData = () => {
-    Alert.alert(
-      'Clear All Data',
-      'This will delete all your test results. Are you sure?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Clear', 
-          style: 'destructive',
-          onPress: async () => {
-            await clearTestResults();
-            setTestResults([]);
-          }
-        }
-      ]
-    );
-  };
 
-  const handleThemeChange = () => {
-    Alert.alert(
-      'Select Theme',
-      'Choose your preferred theme',
-      [
-        { text: 'Light', onPress: () => setTheme('light') },
-        { text: 'Dark', onPress: () => setTheme('dark') },
-        { text: 'Auto', onPress: () => setTheme('auto') },
-        { text: 'Cancel', style: 'cancel' }
-      ]
-    );
-  };
-
-  const getThemeDisplayText = () => {
-    switch (theme) {
-      case 'light': return 'Light';
-      case 'dark': return 'Dark';
-      case 'auto': return 'Auto';
-      default: return 'Auto';
-    }
-  };
 
   if (isLoading) {
     return (
@@ -176,6 +175,47 @@ export default function ProfileScreen() {
     >
       <AppHeader title="My Profile" />
       <ThemedView style={styles.content}>
+
+      {/* Profile Header */}
+      <ThemedView style={[styles.profileHeader, { backgroundColor: Colors[currentScheme].cardBackground }]}>
+        <TouchableOpacity onPress={pickImage} activeOpacity={0.7}>
+          {avatarUri ? (
+            <Image source={{ uri: avatarUri }} style={styles.avatar} />
+          ) : (
+            <ThemedView style={[styles.avatarPlaceholder, { backgroundColor: '#16A34A' }]}>
+              <Ionicons name="person" size={40} color="white" />
+            </ThemedView>
+          )}
+          <ThemedView style={styles.editBadge}>
+            <Ionicons name="camera" size={16} color="white" />
+          </ThemedView>
+        </TouchableOpacity>
+        <ThemedView style={styles.profileInfo}>
+          {isEditingName ? (
+            <ThemedView style={styles.nameEditContainer}>
+              <TextInput
+                style={[styles.nameInput, { color: Colors[currentScheme].text, backgroundColor: Colors[currentScheme].background }]}
+                value={userName}
+                onChangeText={setUserName}
+                placeholder="Enter your name"
+                placeholderTextColor="#999"
+                autoFocus
+              />
+              <TouchableOpacity onPress={handleSaveName} style={styles.saveButton}>
+                <Ionicons name="checkmark" size={20} color="#16A34A" />
+              </TouchableOpacity>
+            </ThemedView>
+          ) : (
+            <TouchableOpacity onPress={() => setIsEditingName(true)} activeOpacity={0.7}>
+              <ThemedView style={styles.nameContainer}>
+                <ThemedText type="subtitle">{userName || 'Add your name'}</ThemedText>
+                <Ionicons name="pencil" size={16} color="#999" style={styles.editIcon} />
+              </ThemedView>
+            </TouchableOpacity>
+          )}
+          <ThemedText style={styles.email}>{userEmail}</ThemedText>
+        </ThemedView>
+      </ThemedView>
 
       {/* Stats Cards */}
       <ThemedView style={styles.statsContainer}>
@@ -243,28 +283,6 @@ export default function ProfileScreen() {
       <ThemedView style={styles.section}>
         <ThemedText type="subtitle" style={styles.sectionTitle}>Settings</ThemedText>
         
-        <TouchableOpacity 
-          style={[styles.settingItem, { backgroundColor: Colors[currentScheme].cardBackground }]}
-          onPress={() => router.push('/progress')}
-          activeOpacity={0.7}
-          hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
-        >
-          <Ionicons name="analytics-outline" size={24} color="#007AFF" />
-          <ThemedText style={styles.settingText}>Learning Progress</ThemedText>
-          <Ionicons name="chevron-forward" size={20} color="#999" />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.settingItem, { backgroundColor: Colors[currentScheme].cardBackground }]}
-          onPress={() => router.push('/bookmarks')}
-          activeOpacity={0.7}
-          hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
-        >
-          <Ionicons name="bookmark-outline" size={24} color="#007AFF" />
-          <ThemedText style={styles.settingText}>Bookmarked Questions</ThemedText>
-          <Ionicons name="chevron-forward" size={20} color="#999" />
-        </TouchableOpacity>
-
         <ThemedView style={[styles.settingItem, { backgroundColor: Colors[currentScheme].cardBackground }]}>
           <Ionicons name="color-palette-outline" size={24} color="#007AFF" />
           <ThemedText style={styles.settingText}>Theme</ThemedText>
@@ -272,111 +290,13 @@ export default function ProfileScreen() {
         </ThemedView>
 
         <TouchableOpacity 
-          style={styles.settingItem}
-          onPress={handleThemeChange}
+          style={[styles.settingItem, styles.dangerItem, { backgroundColor: Colors[currentScheme].cardBackground }]}
+          onPress={handleLogout}
           activeOpacity={0.7}
-          hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
         >
-          <Ionicons name="settings-outline" size={24} color="#007AFF" />
-          <ThemedText style={styles.settingText}>Advanced Theme</ThemedText>
-          <ThemedText style={styles.themeValue}>{getThemeDisplayText()}</ThemedText>
-          <Ionicons name="chevron-forward" size={20} color="#999" />
+          <Ionicons name="log-out-outline" size={24} color="#FF3B30" />
+          <ThemedText style={[styles.settingText, { color: '#FF3B30' }]}>Logout</ThemedText>
         </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.settingItem}
-          activeOpacity={0.7}
-          hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
-        >
-          <Ionicons name="notifications-outline" size={24} color="#007AFF" />
-          <ThemedText style={styles.settingText}>Notifications</ThemedText>
-          <Ionicons name="chevron-forward" size={20} color="#999" />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.settingItem}
-          activeOpacity={0.7}
-          hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
-        >
-          <Ionicons name="help-circle-outline" size={24} color="#007AFF" />
-          <ThemedText style={styles.settingText}>Help & Support</ThemedText>
-          <Ionicons name="chevron-forward" size={20} color="#999" />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.settingItem}
-          onPress={() => router.push('/privacy-policy')}
-          activeOpacity={0.7}
-          hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
-        >
-          <Ionicons name="shield-checkmark-outline" size={24} color="#007AFF" />
-          <ThemedText style={styles.settingText}>Privacy Policy</ThemedText>
-          <Ionicons name="chevron-forward" size={20} color="#999" />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.settingItem}
-          onPress={handleManualSync}
-          activeOpacity={0.7}
-          hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
-        >
-          <Ionicons name="sync-outline" size={24} color="#007AFF" />
-          <ThemedText style={styles.settingText}>Sync Data</ThemedText>
-          {unsyncedCount > 0 && (
-            <ThemedView style={styles.badge}>
-              <ThemedText style={styles.badgeText}>{unsyncedCount}</ThemedText>
-            </ThemedView>
-          )}
-          <Ionicons name="chevron-forward" size={20} color="#999" />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.settingItem}
-          activeOpacity={0.7}
-          hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
-        >
-          <Ionicons name="information-circle-outline" size={24} color="#007AFF" />
-          <ThemedText style={styles.settingText}>About</ThemedText>
-          <Ionicons name="chevron-forward" size={20} color="#999" />
-        </TouchableOpacity>
-
-        {__DEV__ && (
-          <>
-            <TouchableOpacity 
-              style={[styles.settingItem, { backgroundColor: Colors[currentScheme].cardBackground }]}
-              onPress={handleRunMigrations}
-              activeOpacity={0.7}
-              hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
-            >
-              <Ionicons name="construct-outline" size={24} color="#007AFF" />
-              <ThemedText style={styles.settingText}>Run Migrations (Dev)</ThemedText>
-              <Ionicons name="chevron-forward" size={20} color="#999" />
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.settingItem, { backgroundColor: Colors[currentScheme].cardBackground }]}
-              onPress={handleInsertMockData}
-              activeOpacity={0.7}
-              hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
-            >
-              <Ionicons name="flask-outline" size={24} color="#FF9500" />
-              <ThemedText style={styles.settingText}>Insert Mock Data (Dev)</ThemedText>
-              <Ionicons name="chevron-forward" size={20} color="#999" />
-            </TouchableOpacity>
-          </>
-        )}
-
-        {testResults.length > 0 && (
-          <TouchableOpacity 
-            style={[styles.settingItem, styles.dangerItem]}
-            onPress={handleClearData}
-            activeOpacity={0.7}
-            hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
-          >
-            <Ionicons name="trash-outline" size={24} color="#FF3B30" />
-            <ThemedText style={[styles.settingText, { color: '#FF3B30' }]}>Clear All Data</ThemedText>
-          </TouchableOpacity>
-        )}
       </ThemedView>
       </ThemedView>
     </ScrollView>
@@ -390,6 +310,70 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 16,
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+    gap: 16,
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  avatarPlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#16A34A',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  nameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  nameEditContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  nameInput: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '600',
+    padding: 8,
+    borderRadius: 8,
+  },
+  saveButton: {
+    padding: 8,
+  },
+  editIcon: {
+    marginLeft: 4,
+  },
+  email: {
+    fontSize: 14,
+    opacity: 0.7,
+    marginTop: 4,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -489,23 +473,7 @@ const styles = StyleSheet.create({
   dangerItem: {
     marginTop: 16,
   },
-  badge: {
-    backgroundColor: '#FF3B30',
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginLeft: 8,
-  },
-  badgeText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  themeValue: {
-    fontSize: 14,
-    opacity: 0.7,
-    marginRight: 8,
-  },
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
