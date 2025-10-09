@@ -14,10 +14,17 @@ export default function SplashScreen() {
   const currentScheme = isDark ? 'dark' : 'light';
 
   useEffect(() => {
-    const checkOnboarding = async () => {
+    const checkAuth = async () => {
       await initDatabase();
+      const authToken = await getSetting('auth_token');
       const onboardingData = await getSetting('onboarding');
+      
       const timer = setTimeout(() => {
+        if (!authToken) {
+          router.replace('/login');
+          return;
+        }
+        
         if (onboardingData) {
           const parsed = JSON.parse(onboardingData);
           if (parsed.completed) {
@@ -31,7 +38,7 @@ export default function SplashScreen() {
       return () => clearTimeout(timer);
     };
     
-    checkOnboarding();
+    checkAuth();
   }, []);
 
   const logoSize = Math.min(width * 0.25, height * 0.12, 120);

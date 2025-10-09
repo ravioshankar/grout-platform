@@ -3,13 +3,44 @@ from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 from datetime import timedelta
 from app.core.database import get_db
-from app.core.security import verify_password, create_access_token, get_current_user
+from app.core.security import verify_password, create_access_token, get_current_user, get_password_hash
 from app.core.oauth import oauth
 from app.models.user import User
-from app.schemas.user import Token, LoginRequest, UserRead
+from app.schemas.user import Token, LoginRequest, UserRead, UserCreate
+from app.schemas.auth import SignupRequest, UserProfileUpdate
 from app.core.config import settings
 
 router = APIRouter()
+
+@router.post(
+    "/signup",
+    response_model=Token,
+    status_code=201,
+    summary="Signup new user",
+    description="Create a new user account with only email and password. Profile details can be added later.",
+    responses={
+        201: {"description": "User created successfully"},
+        400: {"description": "Email already registered"},
+    },
+)
+async def signup(signup_data: SignupRequest, db: Session = Depends(get_db)):
+    existing = db.exec(select(User).where(User.email == signup_data.email)).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    db_user = User(
+        email=signup_data.email,
+        hashed_password=get_password_hash(signup_data.password)
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": str(db_user.id)}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post(
     "/login",
@@ -50,6 +81,32 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     },
 )
 async def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+@router.patch(
+    "/me",
+    response_model=UserRead,
+    summary="Update user profile",
+    description="Update current user's profile information (state, test_type)",
+    responses={
+        200: {"description": "Profile updated successfully"},
+        401: {"description": "Not authenticated"},
+    },
+)
+async def update_profile(
+    profile_data: UserProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if profile_data.state is not None:
+        current_user.state = profile_data.state
+    if profile_data.test_type is not None:
+        current_user.test_type = profile_data.test_type
+    
+    current_user.updated_at = datetime.utcnow()
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
     return current_user
 
 @router.get(

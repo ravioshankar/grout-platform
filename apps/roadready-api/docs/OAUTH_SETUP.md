@@ -44,11 +44,12 @@
 
 ## API Endpoints
 
+- `POST /api/v1/auth/signup` - Create new user account (returns JWT token)
+- `POST /api/v1/auth/login` - Login with email/password (returns JWT token)
 - `GET /api/v1/auth/login/google` - Initiate Google OAuth
 - `GET /api/v1/auth/login/facebook` - Initiate Facebook OAuth
 - `GET /api/v1/auth/callback/{provider}` - OAuth callback (automatic)
-- `POST /api/v1/auth/login` - Traditional email/password login
-- `POST /api/v1/users/` - Email signup with password
+- `GET /api/v1/auth/me` - Get current authenticated user
 
 ## User Flow
 

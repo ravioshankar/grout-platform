@@ -5,8 +5,8 @@ from typing import Optional
 class UserCreate(SQLModel):
     email: str = Field(description="User's email address")
     password: Optional[str] = Field(default=None, description="User password (required for email signup)", min_length=8)
-    state: str = Field(description="US state code", max_length=2)
-    test_type: str = Field(description="Type of DMV test")
+    state: Optional[str] = Field(default=None, description="US state code", max_length=2)
+    test_type: Optional[str] = Field(default=None, description="Type of DMV test")
     
     model_config = {
         "json_schema_extra": {
@@ -22,8 +22,8 @@ class UserCreate(SQLModel):
 class UserRead(SQLModel):
     id: int = Field(description="Unique user identifier")
     email: str = Field(description="User's email address")
-    state: str = Field(description="US state code")
-    test_type: str = Field(description="Type of DMV test (car, motorcycle, cdl)")
+    state: Optional[str] = Field(description="US state code")
+    test_type: Optional[str] = Field(description="Type of DMV test (car, motorcycle, cdl)")
     is_active: bool = Field(description="Account active status")
     created_at: datetime = Field(description="Account creation timestamp")
     updated_at: datetime = Field(description="Last update timestamp")
