@@ -126,7 +126,19 @@ export default function ProfileScreen() {
           text: 'Logout', 
           style: 'destructive',
           onPress: async () => {
+            const authToken = await getSetting('auth_token');
+            if (authToken) {
+              try {
+                await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${authToken}` },
+                });
+              } catch (error) {
+                console.error('Logout error:', error);
+              }
+            }
             await deleteSetting('auth_token');
+            await deleteSetting('refresh_token');
             await deleteSetting('user_email');
             router.replace('/login');
           }

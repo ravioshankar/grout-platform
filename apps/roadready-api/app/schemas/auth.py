@@ -14,6 +14,11 @@ class SignupRequest(SQLModel):
         }
     }
 
+class TokenResponse(SQLModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
 class UserProfileUpdate(SQLModel):
     first_name: Optional[str] = Field(default=None, description="User's first name", max_length=100)
     last_name: Optional[str] = Field(default=None, description="User's last name", max_length=100)
@@ -30,3 +35,6 @@ class UserProfileUpdate(SQLModel):
             }]
         }
     }
+
+class RefreshTokenRequest(SQLModel):
+    refresh_token: str

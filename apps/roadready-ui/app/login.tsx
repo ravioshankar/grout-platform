@@ -41,6 +41,7 @@ export default function LoginScreen() {
       
       if (data.access_token) {
         await saveSetting('auth_token', data.access_token);
+        await saveSetting('refresh_token', data.refresh_token);
         await saveSetting('user_email', email);
         router.replace('/onboarding');
       } else {

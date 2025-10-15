@@ -3,18 +3,21 @@ from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 from datetime import timedelta, datetime
 from app.core.database import get_db
-from app.core.security import verify_password, create_access_token, get_current_user, get_password_hash
+from app.core.security import (
+    verify_password, create_tokens, get_current_user, 
+    get_password_hash, revoke_session, revoke_all_user_sessions, oauth2_scheme
+)
 from app.core.oauth import oauth
 from app.models.user import User
 from app.schemas.user import Token, LoginRequest, UserRead, UserCreate
-from app.schemas.auth import SignupRequest, UserProfileUpdate
+from app.schemas.auth import SignupRequest, UserProfileUpdate, TokenResponse
 from app.core.config import settings
 
 router = APIRouter()
 
 @router.post(
     "/signup",
-    response_model=Token,
+    response_model=TokenResponse,
     status_code=201,
     summary="Signup new user",
     description="Create a new user account with only email and password. Profile details can be added later.",
@@ -23,7 +26,7 @@ router = APIRouter()
         400: {"description": "Email already registered"},
     },
 )
-async def signup(signup_data: SignupRequest, db: Session = Depends(get_db)):
+async def signup(signup_data: SignupRequest, request: Request, db: Session = Depends(get_db)):
     existing = db.exec(select(User).where(User.email == signup_data.email)).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -36,15 +39,16 @@ async def signup(signup_data: SignupRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
     
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": str(db_user.id)}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+    access_token, refresh_token = create_tokens(db_user.id, db, request)
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
+    }
 
 @router.post(
     "/login",
-    response_model=Token,
+    response_model=TokenResponse,
     summary="Login user",
     description="Authenticate user and return JWT access token",
     responses={
@@ -52,7 +56,7 @@ async def signup(signup_data: SignupRequest, db: Session = Depends(get_db)):
         401: {"description": "Invalid credentials"},
     },
 )
-async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
+async def login(login_data: LoginRequest, request: Request, db: Session = Depends(get_db)):
     user = db.exec(select(User).where(User.email == login_data.email)).first()
     if not user or not verify_password(login_data.password, user.hashed_password):
         raise HTTPException(
@@ -62,13 +66,14 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         )
     
     if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(status_code=400, detail="Account is inactive")
     
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": str(user.id)}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+    access_token, refresh_token = create_tokens(user.id, db, request)
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
+    }
 
 @router.get(
     "/me",
@@ -82,6 +87,42 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
 )
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+@router.post(
+    "/logout",
+    summary="Logout user",
+    description="Invalidate current session",
+    responses={
+        200: {"description": "Logout successful"},
+        401: {"description": "Not authenticated"},
+    },
+)
+async def logout(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    from jose import jwt
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        session_id = payload.get("session_id")
+        if session_id:
+            revoke_session(session_id, db)
+    except:
+        pass
+    return {"message": "Logged out successfully"}
+
+@router.post(
+    "/logout-all",
+    summary="Logout from all devices",
+    description="Invalidate all user sessions",
+    responses={
+        200: {"description": "All sessions logged out"},
+        401: {"description": "Not authenticated"},
+    },
+)
+async def logout_all(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    revoke_all_user_sessions(current_user.id, db)
+    return {"message": "Logged out from all devices"}
 
 @router.patch(
     "/me",
@@ -175,12 +216,12 @@ async def oauth_callback(provider: str, request: Request, db: Session = Depends(
             db.commit()
         
         # Create access token
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": str(user.id)}, expires_delta=access_token_expires
-        )
-        
-        return {"access_token": access_token, "token_type": "bearer"}
+        access_token, refresh_token = create_tokens(user.id, db, request)
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer"
+        }
     
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"OAuth authentication failed: {str(e)}")

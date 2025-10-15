@@ -18,6 +18,7 @@ export function useInactivityLogout() {
 
       timeoutRef.current = setTimeout(async () => {
         await deleteSetting('auth_token');
+        await deleteSetting('refresh_token');
         await deleteSetting('user_email');
         router.replace('/login');
       }, INACTIVITY_TIMEOUT);
