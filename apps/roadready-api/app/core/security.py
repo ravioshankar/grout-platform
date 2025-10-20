@@ -78,9 +78,18 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         token_type: str = payload.get("type")
         
         if not user_id or not session_id or token_type != "access":
+            print(f"Token validation failed: user_id={user_id}, session_id={session_id}, type={token_type}")
+            raise credentials_exception
+        
+        # Validate user_id is numeric
+        try:
+            int(user_id)
+        except (ValueError, TypeError):
+            print(f"Invalid user_id format: {user_id}")
             raise credentials_exception
             
-    except JWTError:
+    except JWTError as e:
+        print(f"JWT decode error: {e}")
         raise credentials_exception
     
     from app.models.session import Session as SessionModel

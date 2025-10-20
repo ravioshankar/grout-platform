@@ -16,8 +16,7 @@ import { Colors } from '@/constants/theme';
 import { insertMockData } from '@/utils/mock-data';
 import { runMigrations } from '@/utils/database';
 import Constants from 'expo-constants';
-
-const API_BASE_URL = 'http://localhost:8000';
+import { apiClient } from '@/utils/api-client';
 
 export default function ProfileScreen() {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -25,8 +24,11 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const [userState, setUserState] = useState('');
+  const [userTestType, setUserTestType] = useState('');
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
+  const [isSavingName, setIsSavingName] = useState(false);
   const { isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
 
@@ -52,22 +54,13 @@ export default function ProfileScreen() {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
-        headers: { 'Authorization': `Bearer ${authToken}` },
-      });
-
-      if (!response.ok) {
-        await deleteSetting('auth_token');
-        await deleteSetting('user_email');
-        router.replace('/login');
-        return;
-      }
-
-      const userData = await response.json();
+      const userData = await apiClient.get<any>('/api/v1/auth/me');
       setUserEmail(userData.email || '');
       setUserName(userData.first_name && userData.last_name 
         ? `${userData.first_name} ${userData.last_name}` 
         : userData.first_name || userData.last_name || '');
+      setUserState(userData.state || '');
+      setUserTestType(userData.test_type || '');
       
       const avatar = await getSetting('user_avatar');
       setAvatarUri(avatar);
@@ -91,28 +84,26 @@ export default function ProfileScreen() {
   };
 
   const handleSaveName = async () => {
+    if (isSavingName) return;
+    
+    setIsSavingName(true);
     try {
-      const authToken = await getSetting('auth_token');
       const names = userName.trim().split(' ');
       const firstName = names[0] || '';
       const lastName = names.slice(1).join(' ') || '';
 
-      await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          first_name: firstName,
-          last_name: lastName,
-        }),
+      await apiClient.patch('/api/v1/auth/me', {
+        first_name: firstName,
+        last_name: lastName,
       });
-
+      
       setIsEditingName(false);
-    } catch (error) {
+      await loadUserProfile();
+    } catch (error: any) {
       console.error('Failed to save name:', error);
-      Alert.alert('Error', 'Failed to save name');
+      Alert.alert('Error', error.message || 'Failed to save name');
+    } finally {
+      setIsSavingName(false);
     }
   };
 
@@ -126,16 +117,10 @@ export default function ProfileScreen() {
           text: 'Logout', 
           style: 'destructive',
           onPress: async () => {
-            const authToken = await getSetting('auth_token');
-            if (authToken) {
-              try {
-                await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
-                  method: 'POST',
-                  headers: { 'Authorization': `Bearer ${authToken}` },
-                });
-              } catch (error) {
-                console.error('Logout error:', error);
-              }
+            try {
+              await apiClient.post('/api/v1/auth/logout', {});
+            } catch (error) {
+              console.error('Logout error:', error);
             }
             await deleteSetting('auth_token');
             await deleteSetting('refresh_token');
@@ -213,8 +198,12 @@ export default function ProfileScreen() {
                 placeholderTextColor="#999"
                 autoFocus
               />
-              <TouchableOpacity onPress={handleSaveName} style={styles.saveButton}>
-                <Ionicons name="checkmark" size={20} color="#16A34A" />
+              <TouchableOpacity onPress={handleSaveName} style={styles.saveButton} disabled={isSavingName}>
+                {isSavingName ? (
+                  <ActivityIndicator size="small" color="#16A34A" />
+                ) : (
+                  <Ionicons name="checkmark" size={20} color="#16A34A" />
+                )}
               </TouchableOpacity>
             </ThemedView>
           ) : (
@@ -226,6 +215,32 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           )}
           <ThemedText style={styles.email}>{userEmail}</ThemedText>
+        </ThemedView>
+      </ThemedView>
+
+      {/* User Details */}
+      <ThemedView style={[styles.detailsCard, { backgroundColor: Colors[currentScheme].cardBackground }]}>
+        <ThemedText type="subtitle" style={styles.sectionTitle}>Profile Details</ThemedText>
+        <ThemedView style={styles.detailRow}>
+          <Ionicons name="mail-outline" size={20} color={Colors[currentScheme].icon} />
+          <ThemedView style={styles.detailContent}>
+            <ThemedText style={styles.detailLabel}>Email</ThemedText>
+            <ThemedText style={styles.detailValue}>{userEmail || 'Not set'}</ThemedText>
+          </ThemedView>
+        </ThemedView>
+        <ThemedView style={styles.detailRow}>
+          <Ionicons name="location-outline" size={20} color={Colors[currentScheme].icon} />
+          <ThemedView style={styles.detailContent}>
+            <ThemedText style={styles.detailLabel}>State</ThemedText>
+            <ThemedText style={styles.detailValue}>{userState || 'Not set'}</ThemedText>
+          </ThemedView>
+        </ThemedView>
+        <ThemedView style={styles.detailRow}>
+          <Ionicons name="car-outline" size={20} color={Colors[currentScheme].icon} />
+          <ThemedView style={styles.detailContent}>
+            <ThemedText style={styles.detailLabel}>Test Type</ThemedText>
+            <ThemedText style={styles.detailValue}>{userTestType || 'Not set'}</ThemedText>
+          </ThemedView>
         </ThemedView>
       </ThemedView>
 
@@ -289,6 +304,31 @@ export default function ProfileScreen() {
             </ThemedView>
           ))
         )}
+      </ThemedView>
+
+      {/* Account Management */}
+      <ThemedView style={styles.section}>
+        <ThemedText type="subtitle" style={styles.sectionTitle}>Account</ThemedText>
+        
+        <TouchableOpacity 
+          style={[styles.settingItem, { backgroundColor: Colors[currentScheme].cardBackground }]}
+          onPress={() => router.push('/profile/edit-profile')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="person-outline" size={24} color="#007AFF" />
+          <ThemedText style={styles.settingText}>Edit Profile</ThemedText>
+          <Ionicons name="chevron-forward" size={20} color={Colors[currentScheme].icon} />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.settingItem, { backgroundColor: Colors[currentScheme].cardBackground }]}
+          onPress={() => router.push('/profile/change-password')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="lock-closed-outline" size={24} color="#FF9500" />
+          <ThemedText style={styles.settingText}>Change Password</ThemedText>
+          <Ionicons name="chevron-forward" size={20} color={Colors[currentScheme].icon} />
+        </TouchableOpacity>
       </ThemedView>
 
       {/* Settings */}
@@ -495,5 +535,33 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     opacity: 0.7,
+  },
+  detailsCard: {
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 12,
+  },
+  detailContent: {
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: 12,
+    opacity: 0.6,
+    marginBottom: 2,
+  },
+  detailValue: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

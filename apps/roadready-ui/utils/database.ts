@@ -296,6 +296,16 @@ export const getSetting = async (key: string): Promise<string | null> => {
   }
 };
 
+export const deleteSetting = async (key: string): Promise<void> => {
+  try {
+    const database = getDatabase();
+    await database.runAsync('DELETE FROM settings WHERE key = ?', [key]);
+  } catch (error) {
+    console.error('Error deleting setting:', error);
+    throw error;
+  }
+};
+
 export const getAllSettings = async (): Promise<Record<string, string>> => {
   try {
     const database = getDatabase();

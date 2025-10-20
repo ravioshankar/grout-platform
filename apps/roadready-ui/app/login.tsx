@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { RoadReadyLogo } from '@/components/logo';
+import { ErrorBanner } from '@/components/error-banner';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
 import { saveSetting } from '@/utils/database';
-
-const API_BASE_URL = 'http://localhost:8000';
+import { apiClient } from '@/utils/api-client';
 
 export default function LoginScreen() {
   const { isDark } = useTheme();
@@ -16,40 +16,31 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill all fields');
+      setError('Please fill all fields');
       return;
     }
 
+    setError('');
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({ message: 'Login failed' }));
-        Alert.alert('Error', data.message || 'Login failed');
-        return;
-      }
-
-      const data = await response.json();
+      const data = await apiClient.post<{ access_token: string; refresh_token: string }>(
+        '/api/v1/auth/login',
+        { email, password },
+        false
+      );
       
-      if (data.access_token) {
-        await saveSetting('auth_token', data.access_token);
-        await saveSetting('refresh_token', data.refresh_token);
-        await saveSetting('user_email', email);
-        router.replace('/onboarding');
-      } else {
-        Alert.alert('Error', 'Invalid response from server');
-      }
-    } catch (error) {
+      await saveSetting('auth_token', data.access_token);
+      await saveSetting('refresh_token', data.refresh_token);
+      await saveSetting('user_email', email);
+      router.replace('/onboarding');
+    } catch (error: any) {
       console.error('Login error:', error);
-      Alert.alert('Error', 'Network error. Please try again.');
+      const errorMessage = error.message || error.toString() || 'Login failed';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -64,6 +55,7 @@ export default function LoginScreen() {
       </ThemedView>
 
       <ThemedView style={styles.form}>
+        <ErrorBanner message={error} onDismiss={() => setError('')} />
         <TextInput
           style={[styles.input, { 
             backgroundColor: Colors[currentScheme].cardBackground,

@@ -17,25 +17,29 @@ export default function SplashScreen() {
     const checkAuth = async () => {
       await initDatabase();
       const authToken = await getSetting('auth_token');
-      const onboardingData = await getSetting('onboarding');
       
-      const timer = setTimeout(() => {
-        if (!authToken) {
-          router.replace('/login');
-          return;
-        }
+      if (!authToken) {
+        setTimeout(() => router.replace('/login'), 2000);
+        return;
+      }
+      
+      try {
+        const { apiClient } = await import('@/utils/api-client');
+        await apiClient.get('/api/v1/auth/me');
         
+        const onboardingData = await getSetting('onboarding');
         if (onboardingData) {
           const parsed = JSON.parse(onboardingData);
           if (parsed.completed) {
-            router.replace('/(tabs)');
+            setTimeout(() => router.replace('/(tabs)'), 2000);
             return;
           }
         }
-        router.replace('/onboarding');
-      }, 3000);
-
-      return () => clearTimeout(timer);
+        setTimeout(() => router.replace('/onboarding'), 2000);
+      } catch (error) {
+        console.error('Token validation failed:', error);
+        setTimeout(() => router.replace('/login'), 2000);
+      }
     };
     
     checkAuth();

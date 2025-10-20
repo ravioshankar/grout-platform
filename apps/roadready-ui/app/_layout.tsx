@@ -49,6 +49,8 @@ export default function RootLayout() {
           <Stack.Screen name="bookmarks" options={{ ...headerStyle, title: 'Bookmarks' }} />
           <Stack.Screen name="study-plan" options={{ ...headerStyle, title: 'Study Plan' }} />
           <Stack.Screen name="privacy-policy" options={{ ...headerStyle, title: 'Privacy Policy' }} />
+          <Stack.Screen name="profile/edit-profile" options={{ ...headerStyle, title: 'Edit Profile' }} />
+          <Stack.Screen name="profile/change-password" options={{ ...headerStyle, title: 'Change Password' }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
         <StatusBar style="light" />
