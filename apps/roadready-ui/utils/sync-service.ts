@@ -1,10 +1,27 @@
+import { syncTestRecordsToBackend, syncTestRecordsFromBackend } from './sync-test-records';
+
 class SyncService {
+  private syncInterval: NodeJS.Timeout | null = null;
+
   async initialize() {
-    // No-op for local storage
+    this.syncInterval = setInterval(() => {
+      this.performSync();
+    }, 5 * 60 * 1000); // Sync every 5 minutes
   }
 
   async performSync(): Promise<{ synced: number; failed: number }> {
-    return { synced: 0, failed: 0 };
+    try {
+      const uploadResult = await syncTestRecordsToBackend();
+      const downloadResult = await syncTestRecordsFromBackend();
+      
+      return {
+        synced: uploadResult.synced + downloadResult.synced,
+        failed: uploadResult.failed + downloadResult.failed,
+      };
+    } catch (error) {
+      console.error('Sync failed:', error);
+      return { synced: 0, failed: 0 };
+    }
   }
 
   async getUnsyncedCount(): Promise<number> {
@@ -12,7 +29,10 @@ class SyncService {
   }
 
   stop() {
-    // No-op
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval);
+      this.syncInterval = null;
+    }
   }
 }
 

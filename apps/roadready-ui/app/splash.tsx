@@ -25,17 +25,22 @@ export default function SplashScreen() {
       
       try {
         const { apiClient } = await import('@/utils/api-client');
-        await apiClient.get('/api/v1/auth/me');
+        const userData = await apiClient.get<any>('/api/v1/auth/me');
         
-        const onboardingData = await getSetting('onboarding');
-        if (onboardingData) {
-          const parsed = JSON.parse(onboardingData);
-          if (parsed.completed) {
-            setTimeout(() => router.replace('/(tabs)'), 2000);
-            return;
-          }
+        // Sync test records on initial load
+        const { syncTestRecords } = await import('@/utils/sync');
+        syncTestRecords().catch(err => console.error('Initial sync failed:', err));
+        
+        // Check if user has profiles
+        const profiles = await apiClient.get<any[]>('/api/v1/onboarding-profiles/');
+        
+        if (profiles.length > 0) {
+          // User has profiles, go to profile selection
+          setTimeout(() => router.replace('/profile-selection'), 2000);
+        } else {
+          // No profiles, go to onboarding
+          setTimeout(() => router.replace('/onboarding'), 2000);
         }
-        setTimeout(() => router.replace('/onboarding'), 2000);
       } catch (error) {
         console.error('Token validation failed:', error);
         setTimeout(() => router.replace('/login'), 2000);

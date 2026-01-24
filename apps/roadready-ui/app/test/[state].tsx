@@ -109,6 +109,20 @@ export default function TestScreen() {
     
     try {
       await saveTestResult(result);
+      
+      const { apiClient } = await import('@/utils/api-client');
+      await apiClient.post('/api/v1/test-records/', {
+        state_code: result.stateCode,
+        test_type: 'full-test',
+        category: result.category,
+        score: result.score,
+        total_questions: result.totalQuestions,
+        correct_answers: result.correctAnswers,
+        time_spent: result.timeSpent,
+        questions: JSON.stringify(result.questions),
+        user_answers: JSON.stringify(result.userAnswers),
+        is_correct: JSON.stringify(result.isCorrect),
+      });
     } catch (error) {
       console.error('Error saving test results:', error);
     }

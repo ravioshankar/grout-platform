@@ -43,6 +43,10 @@ export default function HomeScreen() {
         await runMigrations();
         setDbInitialized(true);
         await loadDashboardData();
+        
+        // Start auto-sync
+        const { startAutoSync } = await import('@/utils/sync');
+        startAutoSync(5).catch(err => console.error('Auto-sync failed:', err));
       } catch (error) {
         console.error('Failed to initialize:', error);
         setIsLoading(false);
@@ -67,6 +71,8 @@ export default function HomeScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    const { syncTestRecords } = await import('@/utils/sync');
+    await syncTestRecords();
     await loadDashboardData();
     setRefreshing(false);
   }, [loadDashboardData]);

@@ -1,6 +1,6 @@
 import { getSetting } from './database';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://127.0.0.1:8888';
 
 interface RequestConfig extends RequestInit {
   requiresAuth?: boolean;
@@ -36,9 +36,14 @@ class ApiClient {
 
     const url = `${this.baseURL}${endpoint}`;
     
+    console.log('API Request:', restConfig.method || 'GET', url);
+    
     const response = await fetch(url, {
       ...restConfig,
       headers: mergedHeaders,
+    }).catch(err => {
+      console.error('Fetch error:', err);
+      throw new Error(`Cannot connect to server. Please ensure the API is running at ${this.baseURL}`);
     });
 
     if (!response.ok) {

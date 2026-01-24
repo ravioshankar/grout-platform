@@ -118,14 +118,27 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await apiClient.post('/api/v1/auth/logout', {});
+              console.log('Starting logout...');
+              await deleteSetting('auth_token');
+              console.log('Deleted auth_token');
+              await deleteSetting('refresh_token');
+              console.log('Deleted refresh_token');
+              await deleteSetting('user_email');
+              console.log('Deleted user_email');
+              
+              if (typeof window !== 'undefined') {
+                window.location.href = '/login';
+              } else {
+                router.replace('/login');
+              }
             } catch (error) {
-              console.error('Logout error:', error);
+              console.error('Error during logout:', error);
+              if (typeof window !== 'undefined') {
+                window.location.href = '/login';
+              } else {
+                router.replace('/login');
+              }
             }
-            await deleteSetting('auth_token');
-            await deleteSetting('refresh_token');
-            await deleteSetting('user_email');
-            router.replace('/login');
           }
         }
       ]

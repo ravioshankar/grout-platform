@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Alert, ActivityIndicator } from 'react-native';
 import { StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
@@ -19,32 +20,35 @@ export default function OnboardingScreen() {
   const [selectedTestType, setSelectedTestType] = useState<TestType | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('standard');
   const [showStateDropdown, setShowStateDropdown] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleContinue = async () => {
     if (!selectedState || !selectedTestType) {
       return;
     }
 
+    setLoading(true);
     try {
-      const authToken = await getSetting('auth_token');
-      
-      if (authToken) {
-        await apiClient.patch('/api/v1/auth/me', {
-          state: selectedState.code,
-          test_type: selectedTestType.id,
-        });
-      }
+      // Create new profile
+      const profile = await apiClient.post<any>('/api/v1/onboarding-profiles/', {
+        profile_name: `${selectedState.name} - ${selectedTestType.name}`,
+        state: selectedState.code,
+        test_type: selectedTestType.id,
+      });
 
-      const onboardingData = {
-        completed: true,
-        selectedState: selectedState.code,
-        selectedTestType: selectedTestType.id,
-        completedAt: new Date().toISOString(),
-      };
-      await saveSetting('onboarding', JSON.stringify(onboardingData));
+      // Activate the new profile
+      await apiClient.post(`/api/v1/onboarding-profiles/${profile.id}/activate`, {});
+
+      // Sync to local storage
+      const { syncActiveProfileToLocal } = await import('@/utils/profile-sync');
+      await syncActiveProfileToLocal();
+
       router.replace('/(tabs)');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving onboarding data:', error);
+      Alert.alert('Error', error.message || 'Failed to save profile. Please check your connection.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -154,13 +158,17 @@ export default function OnboardingScreen() {
         <TouchableOpacity
           style={[
             styles.continueButton,
-            (!selectedState || !selectedTestType) && styles.disabledButton
+            (!selectedState || !selectedTestType || loading) && styles.disabledButton
           ]}
           onPress={handleContinue}
-          disabled={!selectedState || !selectedTestType}
+          disabled={!selectedState || !selectedTestType || loading}
           activeOpacity={0.7}
         >
-          <ThemedText style={styles.continueButtonText}>Get Started</ThemedText>
+          {loading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <ThemedText style={styles.continueButtonText}>Get Started</ThemedText>
+          )}
         </TouchableOpacity>
       </ThemedView>
     </ScrollView>

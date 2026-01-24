@@ -135,7 +135,7 @@ Change user email address. Requires password verification.
 ### Update Profile with cURL
 
 ```bash
-curl -X PATCH http://localhost:8000/api/v1/auth/me \
+curl -X PATCH http://localhost:8888/api/v1/auth/me \
   -H "Authorization: Bearer <your_token>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -150,7 +150,7 @@ curl -X PATCH http://localhost:8000/api/v1/auth/me \
 ### Change Password with cURL
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/auth/change-password \
+curl -X POST http://localhost:8888/api/v1/auth/change-password \
   -H "Authorization: Bearer <your_token>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -162,7 +162,7 @@ curl -X POST http://localhost:8000/api/v1/auth/change-password \
 ### Change Email with cURL
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/auth/change-email \
+curl -X POST http://localhost:8888/api/v1/auth/change-email \
   -H "Authorization: Bearer <your_token>" \
   -H "Content-Type: application/json" \
   -d '{

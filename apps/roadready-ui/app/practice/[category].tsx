@@ -91,6 +91,20 @@ export default function PracticeScreen() {
         await updateStudyProgress(category as string, questions.length);
         await updateStudyStreak();
         await updateDailyGoalProgress(questions.length);
+        
+        const { apiClient } = await import('@/utils/api-client');
+        await apiClient.post('/api/v1/test-records/', {
+          state_code: testResult.stateCode,
+          test_type: 'practice',
+          category: testResult.category,
+          score: testResult.score,
+          total_questions: testResult.totalQuestions,
+          correct_answers: testResult.correctAnswers,
+          time_spent: testResult.timeSpent,
+          questions: JSON.stringify(testResult.questions),
+          user_answers: JSON.stringify(testResult.userAnswers),
+          is_correct: JSON.stringify(testResult.isCorrect),
+        });
       } catch (error) {
         console.error('Error saving practice results:', error);
       }

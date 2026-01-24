@@ -65,8 +65,8 @@ app/
 
 ## API Documentation
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- Swagger UI: http://localhost:8888/docs
+- ReDoc: http://localhost:8888/redoc
 
 ## Endpoints
 

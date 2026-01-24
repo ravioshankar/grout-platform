@@ -31,7 +31,7 @@ export const initDatabase = async () => {
       updated_at INTEGER NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS test_results (
+    CREATE TABLE IF NOT EXISTS test_records (
       id TEXT PRIMARY KEY,
       state_code TEXT NOT NULL,
       score INTEGER NOT NULL,
@@ -163,7 +163,7 @@ export const saveTestResult = async (result: any) => {
     const database = getDatabase();
     
     await database.runAsync(
-      `INSERT INTO test_results (
+      `INSERT INTO test_records (
         id, state_code, score, total_questions, correct_answers, category,
         license_test_type, completed_at, time_spent, test_type, questions,
         user_answers, is_correct
@@ -193,7 +193,7 @@ export const saveTestResult = async (result: any) => {
 export const getTestResults = async (stateCode?: string) => {
   try {
     const database = getDatabase();
-    let query = 'SELECT * FROM test_results';
+    let query = 'SELECT * FROM test_records';
     let params: any[] = [];
     
     if (stateCode) {
@@ -323,6 +323,15 @@ export const runMigrations = async () => {
   try {
     const database = getDatabase();
     
+    // Migrate test_results to test_records if needed
+    const tables = await database.getAllAsync<{ name: string }>(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='test_results'"
+    );
+    if (tables.length > 0) {
+      await database.execAsync('ALTER TABLE test_results RENAME TO test_records;');
+      console.log('Migrated test_results to test_records');
+    }
+    
     // Ensure settings table exists
     await database.execAsync(`
       CREATE TABLE IF NOT EXISTS settings (
@@ -345,7 +354,7 @@ export const clearAllData = async () => {
   const database = getDatabase();
   await database.execAsync(`
     DELETE FROM user_profile;
-    DELETE FROM test_results;
+    DELETE FROM test_records;
     DELETE FROM bookmarks;
     DELETE FROM study_plan;
     DELETE FROM settings;

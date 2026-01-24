@@ -70,11 +70,11 @@ export const getUserProfile = async () => {
 };
 
 export const saveTestResult = async (result: any) => {
-  await put('test_results', result);
+  await put('test_records', result);
 };
 
 export const getTestResults = async (stateCode?: string) => {
-  const results = await getAll<any>('test_results');
+  const results = await getAll<any>('test_records');
   const filtered = stateCode ? results.filter(r => r.stateCode === stateCode) : results;
   return filtered.map((r: any) => ({
     ...r,
@@ -114,6 +114,15 @@ export const getSetting = async (key: string): Promise<string | null> => {
   }
 };
 
+export const deleteSetting = async (key: string): Promise<void> => {
+  try {
+    await remove('settings', key);
+  } catch (error) {
+    console.error('Error deleting setting:', error);
+    throw error;
+  }
+};
+
 export const getAllSettings = async (): Promise<Record<string, string>> => {
   try {
     const results = await getAll<{ key: string; value: string }>('settings');
@@ -126,7 +135,6 @@ export const getAllSettings = async (): Promise<Record<string, string>> => {
 
 export const runMigrations = async () => {
   try {
-    // IndexedDB stores are created in initIndexedDB
     await initIndexedDB();
     console.log('Web migrations completed successfully');
     return true;
@@ -138,7 +146,7 @@ export const runMigrations = async () => {
 
 export const clearAllData = async () => {
   await clear('user_profile');
-  await clear('test_results');
+  await clear('test_records');
   await clear('bookmarks');
   await clear('study_plan');
   await clear('settings');

@@ -8,7 +8,7 @@
 4. Go to "Credentials" → "Create Credentials" → "OAuth 2.0 Client ID"
 5. Configure OAuth consent screen
 6. Add authorized redirect URIs:
-   - `http://localhost:8000/api/v1/auth/callback/google` (development)
+   - `http://localhost:8888/api/v1/auth/callback/google` (development)
    - `https://yourdomain.com/api/v1/auth/callback/google` (production)
 7. Copy Client ID and Client Secret to `.env`:
    ```
@@ -22,7 +22,7 @@
 2. Create a new app or select existing one
 3. Add "Facebook Login" product
 4. Configure OAuth redirect URIs in Settings → Basic:
-   - `http://localhost:8000/api/v1/auth/callback/facebook` (development)
+   - `http://localhost:8888/api/v1/auth/callback/facebook` (development)
    - `https://yourdomain.com/api/v1/auth/callback/facebook` (production)
 5. Copy App ID and App Secret to `.env`:
    ```
@@ -33,12 +33,12 @@
 ## Testing OAuth Flow
 
 ### Google Login
-1. Navigate to: `http://localhost:8000/api/v1/auth/login/google`
+1. Navigate to: `http://localhost:8888/api/v1/auth/login/google`
 2. Authorize with Google account
 3. Receive JWT token in response
 
 ### Facebook Login
-1. Navigate to: `http://localhost:8000/api/v1/auth/login/facebook`
+1. Navigate to: `http://localhost:8888/api/v1/auth/login/facebook`
 2. Authorize with Facebook account
 3. Receive JWT token in response
 

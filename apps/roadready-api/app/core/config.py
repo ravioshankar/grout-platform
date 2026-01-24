@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = ""
     FACEBOOK_CLIENT_ID: str = ""
     FACEBOOK_CLIENT_SECRET: str = ""
-    OAUTH_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/callback"
+    OAUTH_REDIRECT_URI: str = "http://localhost:8888/api/v1/auth/callback"
     
     class Config:
         env_file = ".env"

@@ -27,17 +27,30 @@ router = APIRouter()
     },
 )
 async def signup(signup_data: SignupRequest, request: Request, db: Session = Depends(get_db)):
-    existing = db.exec(select(User).where(User.email == signup_data.email)).first()
+    from app.core.validation import validate_email, validate_password_strength
+    from app.services.email_service import EmailService
+    
+    # Validate email and password
+    email = validate_email(signup_data.email)
+    validate_password_strength(signup_data.password)
+    
+    existing = db.exec(select(User).where(User.email == email)).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
     db_user = User(
-        email=signup_data.email,
+        email=email,
         hashed_password=get_password_hash(signup_data.password)
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    
+    # Send welcome email (async, don't wait)
+    try:
+        await EmailService.send_welcome_email(email)
+    except Exception as e:
+        print(f"Failed to send welcome email: {e}")
     
     access_token, refresh_token = create_tokens(db_user.id, db, request)
     return {
@@ -199,20 +212,25 @@ async def update_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    from app.core.validation import (
+        validate_phone_number, validate_state_code, 
+        validate_test_type, validate_date_of_birth
+    )
+    
     if profile_data.first_name is not None:
         current_user.first_name = profile_data.first_name
     if profile_data.last_name is not None:
         current_user.last_name = profile_data.last_name
     if profile_data.phone_number is not None:
-        current_user.phone_number = profile_data.phone_number
+        current_user.phone_number = validate_phone_number(profile_data.phone_number)
     if profile_data.date_of_birth is not None:
-        current_user.date_of_birth = profile_data.date_of_birth
+        current_user.date_of_birth = validate_date_of_birth(profile_data.date_of_birth)
     if profile_data.avatar_url is not None:
         current_user.avatar_url = profile_data.avatar_url
     if profile_data.state is not None:
-        current_user.state = profile_data.state
+        current_user.state = validate_state_code(profile_data.state)
     if profile_data.test_type is not None:
-        current_user.test_type = profile_data.test_type
+        current_user.test_type = validate_test_type(profile_data.test_type)
     if profile_data.license_number is not None:
         current_user.license_number = profile_data.license_number
     
@@ -236,11 +254,16 @@ async def change_password(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    from app.core.validation import validate_password_strength
+    
     if not current_user.hashed_password:
         raise HTTPException(status_code=400, detail="OAuth users cannot change password")
     
     if not verify_password(password_data.current_password, current_user.hashed_password):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
+    
+    # Validate new password strength
+    validate_password_strength(password_data.new_password)
     
     current_user.hashed_password = get_password_hash(password_data.new_password)
     current_user.updated_at = datetime.utcnow()

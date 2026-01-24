@@ -1,5 +1,5 @@
 const DB_NAME = 'roadready_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let db: IDBDatabase | null = null;
 
@@ -21,12 +21,18 @@ export const initIndexedDB = (): Promise<IDBDatabase> => {
 
       request.onupgradeneeded = (event) => {
         const database = (event.target as IDBOpenDBRequest).result;
+        const oldVersion = event.oldVersion;
+
+        // Migrate old test_results to test_records
+        if (oldVersion < 1 && database.objectStoreNames.contains('test_results')) {
+          database.deleteObjectStore('test_results');
+        }
 
         if (!database.objectStoreNames.contains('user_profile')) {
           database.createObjectStore('user_profile', { keyPath: 'id', autoIncrement: true });
         }
-        if (!database.objectStoreNames.contains('test_results')) {
-          database.createObjectStore('test_results', { keyPath: 'id' });
+        if (!database.objectStoreNames.contains('test_records')) {
+          database.createObjectStore('test_records', { keyPath: 'id' });
         }
         if (!database.objectStoreNames.contains('bookmarks')) {
           database.createObjectStore('bookmarks', { keyPath: 'id' });
@@ -103,7 +109,9 @@ export const remove = (storeName: string, key: IDBValidKey): Promise<void> => {
       const transaction = getDB().transaction(storeName, 'readwrite');
       const store = transaction.objectStore(storeName);
       const request = store.delete(key);
-      request.onsuccess = () => resolve();
+      
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
       request.onerror = () => reject(request.error);
     } catch (error) {
       reject(error);
