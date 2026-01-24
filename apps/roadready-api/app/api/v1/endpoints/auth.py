@@ -30,7 +30,6 @@ async def signup(signup_data: SignupRequest, request: Request, db: Session = Dep
     from app.core.validation import validate_email, validate_password_strength
     from app.services.email_service import EmailService
     
-    # Validate email and password
     email = validate_email(signup_data.email)
     validate_password_strength(signup_data.password)
     
@@ -43,10 +42,8 @@ async def signup(signup_data: SignupRequest, request: Request, db: Session = Dep
         hashed_password=get_password_hash(signup_data.password)
     )
     db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+    db.flush()
     
-    # Send welcome email (async, don't wait)
     try:
         await EmailService.send_welcome_email(email)
     except Exception as e:
@@ -236,8 +233,6 @@ async def update_profile(
     
     current_user.updated_at = datetime.utcnow()
     db.add(current_user)
-    db.commit()
-    db.refresh(current_user)
     return current_user
 
 @router.post(
@@ -268,8 +263,6 @@ async def change_password(
     current_user.hashed_password = get_password_hash(password_data.new_password)
     current_user.updated_at = datetime.utcnow()
     db.add(current_user)
-    db.commit()
-    
     return {"message": "Password changed successfully"}
 
 @router.post(
@@ -302,9 +295,6 @@ async def change_email(
     current_user.email_verified = False
     current_user.updated_at = datetime.utcnow()
     db.add(current_user)
-    db.commit()
-    db.refresh(current_user)
-    
     return current_user
 
 @router.get(

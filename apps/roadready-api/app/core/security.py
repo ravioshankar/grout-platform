@@ -60,7 +60,6 @@ def create_tokens(user_id: int, db: Session, request: Request = None) -> Tuple[s
         user_agent=user_agent,
     )
     db.add(session)
-    db.commit()
     
     return access_token, refresh_token
 
@@ -120,7 +119,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     
     session.last_activity = datetime.utcnow()
     db.add(session)
-    db.commit()
     
     user = db.get(User, int(user_id))
     if not user or not user.is_active:
@@ -139,7 +137,6 @@ def revoke_session(session_id: str, db: Session):
         session.is_active = False
         session.revoked_at = datetime.utcnow()
         db.add(session)
-        db.commit()
 
 def revoke_all_user_sessions(user_id: int, db: Session, except_session_id: str = None):
     from app.models.session import Session as SessionModel
@@ -154,5 +151,3 @@ def revoke_all_user_sessions(user_id: int, db: Session, except_session_id: str =
         session.is_active = False
         session.revoked_at = datetime.utcnow()
         db.add(session)
-    
-    db.commit()

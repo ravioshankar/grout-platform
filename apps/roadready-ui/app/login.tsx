@@ -107,6 +107,14 @@ export default function LoginScreen() {
             Don't have an account? <ThemedText type="link">Sign Up</ThemedText>
           </ThemedText>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.linkButton}
+          onPress={() => router.push('/forgot-password')}
+          activeOpacity={0.7}
+        >
+          <ThemedText type="link">Forgot Password?</ThemedText>
+        </TouchableOpacity>
       </ThemedView>
     </ThemedView>
   );

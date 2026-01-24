@@ -160,7 +160,7 @@ export default function TestScreen() {
         </ThemedText>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => testResult && router.push(`/report/${testResult.id}`)}
+          onPress={() => testResult && router.replace(`/report/${testResult.id}`)}
           activeOpacity={0.7}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
@@ -168,11 +168,11 @@ export default function TestScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: '#666', marginTop: 10 }]}
-          onPress={() => router.push('/')}
+          onPress={() => router.replace('/(tabs)')}
           activeOpacity={0.7}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <ThemedText style={styles.buttonText}>Back to Dashboard</ThemedText>
+          <ThemedText style={styles.buttonText}>Back to Home</ThemedText>
         </TouchableOpacity>
       </ThemedView>
     );

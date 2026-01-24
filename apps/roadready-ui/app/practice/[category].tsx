@@ -112,7 +112,10 @@ export default function PracticeScreen() {
       Alert.alert(
         'Practice Complete!',
         `You scored ${finalScore}/${questions.length}`,
-        [{ text: 'OK', onPress: () => router.push('/') }]
+        [
+          { text: 'View Report', onPress: () => router.replace(`/report/${testResult.id}`) },
+          { text: 'Home', onPress: () => router.replace('/(tabs)'), style: 'cancel' }
+        ]
       );
     }
   };

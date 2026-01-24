@@ -6,19 +6,22 @@ import { ThemedView } from '@/components/themed-view';
 import { AppHeader } from '@/components/app-header';
 import { StudyReminder } from '@/components/study-reminder';
 import { DailyGoal } from '@/components/daily-goal';
+import { EmailVerificationBanner } from '@/components/email-verification-banner';
 import { getTestResults } from '@/utils/storage';
-import { getUserProfile } from '@/utils/database';
+import { getUserProfile, getSetting } from '@/utils/database';
 import { TestResult } from '@/constants/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
 import { initDatabase, runMigrations } from '@/utils/database';
+import { apiClient } from '@/utils/api-client';
 
 export default function HomeScreen() {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dbInitialized, setDbInitialized] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(true);
   const { isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
 
@@ -44,7 +47,16 @@ export default function HomeScreen() {
         setDbInitialized(true);
         await loadDashboardData();
         
-        // Start auto-sync
+        const authToken = await getSetting('auth_token');
+        if (authToken) {
+          try {
+            const userData = await apiClient.get<any>('/api/v1/auth/me');
+            setEmailVerified(userData.email_verified || false);
+          } catch (error) {
+            console.error('Failed to load user data:', error);
+          }
+        }
+        
         const { startAutoSync } = await import('@/utils/sync');
         startAutoSync(5).catch(err => console.error('Auto-sync failed:', err));
       } catch (error) {
@@ -102,6 +114,7 @@ export default function HomeScreen() {
       }
     >
       <AppHeader title="Home" />
+      <EmailVerificationBanner emailVerified={emailVerified} />
 
       {/* Study Reminder */}
       <StudyReminder onStartStudy={() => router.push('/study-plan')} />
@@ -145,8 +158,10 @@ export default function HomeScreen() {
               activeOpacity={0.7}
               hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
             >
-              <Ionicons name={action.icon as any} size={24} color={action.color} />
-              <ThemedText style={styles.actionTitle}>{action.title}</ThemedText>
+              <ThemedView style={styles.actionContent}>
+                <Ionicons name={action.icon as any} size={24} color={action.color} />
+                <ThemedText style={styles.actionTitle}>{action.title}</ThemedText>
+              </ThemedView>
             </TouchableOpacity>
           ))}
         </ThemedView>
@@ -158,7 +173,7 @@ export default function HomeScreen() {
           <ThemedText type="subtitle" style={styles.sectionTitle}>Recent Activity</ThemedText>
           <ThemedView style={[styles.recentCard, { backgroundColor: Colors[currentScheme].cardBackground, borderColor: Colors[currentScheme].border }]}>
             <ThemedView style={styles.recentHeader}>
-              <ThemedView>
+              <ThemedView style={styles.recentInfo}>
                 <ThemedText type="defaultSemiBold">{recentTest.testType === 'full-test' ? 'Full Test' : 'Practice'}</ThemedText>
                 <ThemedText style={styles.recentDate}>{new Date(recentTest.completedAt).toLocaleDateString()}</ThemedText>
               </ThemedView>
@@ -261,6 +276,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 12,
+    backgroundColor: 'transparent',
   },
   statCard: {
     flex: 1,
@@ -296,6 +312,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: 12,
+    backgroundColor: 'transparent',
   },
   actionCard: {
     flex: 1,
@@ -306,6 +323,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderLeftWidth: 4,
     minHeight: 100,
+  },
+  actionContent: {
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'transparent',
   },
   actionTitle: {
     fontSize: 14,
@@ -333,16 +355,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+    backgroundColor: 'transparent',
   },
   recentDate: {
     fontSize: 12,
     opacity: 0.7,
     marginTop: 2,
   },
+  recentInfo: {
+    backgroundColor: 'transparent',
+  },
   scoreContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    backgroundColor: 'transparent',
   },
   recentScore: {
     fontSize: 18,
@@ -393,6 +420,7 @@ const styles = StyleSheet.create({
   },
   stepContent: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   stepDescription: {
     fontSize: 14,

@@ -10,9 +10,16 @@ export interface ActiveProfile {
 
 export async function syncActiveProfileToLocal(): Promise<void> {
   try {
-    const activeProfile = await apiClient.get<ActiveProfile | null>('/api/v1/onboarding-profiles/active');
+    const response = await apiClient.get<any>('/api/v1/onboarding-profiles/active');
     
-    if (activeProfile) {
+    if (response && response.profile === null) {
+      await saveSetting('onboarding', JSON.stringify({ completed: false }));
+      return;
+    }
+    
+    const activeProfile = response.profile ? response : response;
+    
+    if (activeProfile && activeProfile.id) {
       const onboardingData = {
         completed: true,
         selectedState: activeProfile.state,

@@ -234,6 +234,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    backgroundColor: 'transparent',
   },
   statValue: {
     fontSize: 18,
@@ -258,15 +259,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    backgroundColor: 'transparent',
   },
   featureHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
     gap: 12,
+    backgroundColor: 'transparent',
   },
   featureInfo: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   featureTitle: {
     fontSize: 16,
@@ -293,9 +297,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
+    backgroundColor: 'transparent',
   },
   tipInfo: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   tipTitle: {
     fontSize: 16,
@@ -305,6 +311,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    backgroundColor: 'transparent',
   },
   tipCategory: {
     color: 'white',
@@ -322,6 +329,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     borderTopWidth: 1,
+    backgroundColor: 'transparent',
   },
   tipText: {
     fontSize: 14,

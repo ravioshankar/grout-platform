@@ -12,9 +12,15 @@ export type ThemedViewProps = ViewProps & {
 export function ThemedView({ style, lightColor, darkColor, ...otherProps }: ThemedViewProps) {
   const { isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
-  const backgroundColor = lightColor || darkColor ? 
-    useThemeColor({ light: lightColor, dark: darkColor }, 'background') :
-    Colors[currentScheme].background;
+  
+  const flatStyle = Array.isArray(style) ? Object.assign({}, ...style) : style;
+  const hasExplicitBackground = flatStyle && 'backgroundColor' in flatStyle;
+  
+  const backgroundColor = hasExplicitBackground ? 
+    flatStyle.backgroundColor :
+    (lightColor || darkColor ? 
+      useThemeColor({ light: lightColor, dark: darkColor }, 'background') :
+      Colors[currentScheme].background);
 
   return (
     <View 

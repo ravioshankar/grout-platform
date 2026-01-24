@@ -22,8 +22,7 @@ async def create_profile(
         test_type=profile_data.test_type
     )
     db.add(profile)
-    db.commit()
-    db.refresh(profile)
+    db.flush()
     return profile
 
 @router.get("/", response_model=list[OnboardingProfileRead])
@@ -35,6 +34,30 @@ async def list_profiles(
         select(OnboardingProfile).where(OnboardingProfile.user_id == current_user.id)
     ).all()
     return profiles
+
+@router.get("/active")
+async def get_active_profile(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    profile = db.exec(
+        select(OnboardingProfile).where(
+            OnboardingProfile.user_id == current_user.id,
+            OnboardingProfile.is_active == True
+        )
+    ).first()
+    if not profile:
+        return {"profile": None}
+    return {
+        "id": profile.id,
+        "user_id": profile.user_id,
+        "profile_name": profile.profile_name,
+        "state": profile.state,
+        "test_type": profile.test_type,
+        "is_active": profile.is_active,
+        "created_at": profile.created_at.isoformat(),
+        "updated_at": profile.updated_at.isoformat()
+    }
 
 @router.get("/{profile_id}", response_model=OnboardingProfileRead)
 async def get_profile(
@@ -76,12 +99,6 @@ async def update_profile(
         profile.test_type = profile_data.test_type
     if profile_data.is_active is not None:
         if profile_data.is_active:
-            db.exec(
-                select(OnboardingProfile).where(
-                    OnboardingProfile.user_id == current_user.id,
-                    OnboardingProfile.is_active == True
-                )
-            ).all()
             for p in db.exec(select(OnboardingProfile).where(OnboardingProfile.user_id == current_user.id)).all():
                 p.is_active = False
                 db.add(p)
@@ -89,22 +106,6 @@ async def update_profile(
     
     profile.updated_at = datetime.utcnow()
     db.add(profile)
-    db.commit()
-    db.refresh(profile)
-    return profile
-
-@router.get("/active", response_model=OnboardingProfileRead | None)
-async def get_active_profile(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Get the currently active profile for syncing to local storage."""
-    profile = db.exec(
-        select(OnboardingProfile).where(
-            OnboardingProfile.user_id == current_user.id,
-            OnboardingProfile.is_active == True
-        )
-    ).first()
     return profile
 
 @router.post("/{profile_id}/activate", response_model=OnboardingProfileRead)
@@ -113,8 +114,6 @@ async def activate_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Activate a profile - sets it as active and updates user's state/test_type.
-    Frontend should sync only this active profile to local storage."""
     profile = db.exec(
         select(OnboardingProfile).where(
             OnboardingProfile.id == profile_id,
@@ -137,8 +136,6 @@ async def activate_profile(
     
     db.add(profile)
     db.add(current_user)
-    db.commit()
-    db.refresh(profile)
     return profile
 
 @router.delete("/{profile_id}", status_code=204)
@@ -157,5 +154,4 @@ async def delete_profile(
         raise HTTPException(status_code=404, detail="Profile not found")
     
     db.delete(profile)
-    db.commit()
     return None

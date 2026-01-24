@@ -70,12 +70,14 @@ export default function CategoriesScreen() {
     >
       <ThemedView style={[styles.categoryContent, { backgroundColor: Colors[currentScheme].cardBackground, borderColor: isDark ? '#374151' : '#e9ecef' }]}>
         <ThemedText style={styles.icon}>{item.icon}</ThemedText>
+        <ThemedView style={styles.textContainer}>
           <ThemedText type="defaultSemiBold" style={styles.title}>
             {item.title}
           </ThemedText>
           <ThemedText style={[styles.description, { opacity: 0.7 }]}>
             {item.description}
           </ThemedText>
+        </ThemedView>
       </ThemedView>
     </TouchableOpacity>
   );
@@ -136,6 +138,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
+    backgroundColor: 'transparent',
   },
   icon: {
     fontSize: 32,
@@ -143,6 +146,7 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   title: {
     fontSize: 18,
@@ -168,6 +172,7 @@ const styles = StyleSheet.create({
     padding: 24,
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'transparent',
   },
   fullTestIcon: {
     fontSize: 36,

@@ -22,8 +22,7 @@ async def create_test_record(
         **test_data.model_dump()
     )
     db.add(test_record)
-    db.commit()
-    db.refresh(test_record)
+    db.flush()
     return test_record
 
 @router.get("/", response_model=TestRecordPaginated)

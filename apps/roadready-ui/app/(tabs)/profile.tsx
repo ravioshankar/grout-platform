@@ -118,21 +118,14 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              console.log('Starting logout...');
-              await deleteSetting('auth_token');
-              console.log('Deleted auth_token');
-              await deleteSetting('refresh_token');
-              console.log('Deleted refresh_token');
-              await deleteSetting('user_email');
-              console.log('Deleted user_email');
-              
-              if (typeof window !== 'undefined') {
-                window.location.href = '/login';
-              } else {
-                router.replace('/login');
-              }
+              await apiClient.post('/api/v1/auth/logout', {});
             } catch (error) {
-              console.error('Error during logout:', error);
+              console.error('Logout API error:', error);
+            } finally {
+              await deleteSetting('auth_token');
+              await deleteSetting('refresh_token');
+              await deleteSetting('user_email');
+              
               if (typeof window !== 'undefined') {
                 window.location.href = '/login';
               } else {
@@ -298,7 +291,7 @@ export default function ProfileScreen() {
         ) : (
           testResults.slice(0, 5).map((result, index) => (
             <ThemedView key={result.id} style={[styles.testItem, { backgroundColor: Colors[currentScheme].cardBackground }]}>
-              <ThemedView >
+              <ThemedView style={styles.testInfo}>
                 <ThemedText type="defaultSemiBold">{result.testType === 'full-test' ? 'Full Test' : 'Practice'}</ThemedText>
                 <ThemedText style={styles.testDetails}>
                   {result.stateCode} • {result.category} • {new Date(result.completedAt).toLocaleDateString()}
@@ -340,6 +333,26 @@ export default function ProfileScreen() {
         >
           <Ionicons name="lock-closed-outline" size={24} color="#FF9500" />
           <ThemedText style={styles.settingText}>Change Password</ThemedText>
+          <Ionicons name="chevron-forward" size={20} color={Colors[currentScheme].icon} />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.settingItem, { backgroundColor: Colors[currentScheme].cardBackground }]}
+          onPress={() => router.push('/statistics')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="analytics-outline" size={24} color="#16A34A" />
+          <ThemedText style={styles.settingText}>Statistics</ThemedText>
+          <Ionicons name="chevron-forward" size={20} color={Colors[currentScheme].icon} />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.settingItem, { backgroundColor: Colors[currentScheme].cardBackground }]}
+          onPress={() => router.push('/sessions')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="phone-portrait-outline" size={24} color="#007AFF" />
+          <ThemedText style={styles.settingText}>Active Sessions</ThemedText>
           <Ionicons name="chevron-forward" size={20} color={Colors[currentScheme].icon} />
         </TouchableOpacity>
       </ThemedView>
@@ -411,16 +424,19 @@ const styles = StyleSheet.create({
   },
   profileInfo: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   nameContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    backgroundColor: 'transparent',
   },
   nameEditContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    backgroundColor: 'transparent',
   },
   nameInput: {
     flex: 1,
@@ -503,6 +519,7 @@ const styles = StyleSheet.create({
   },
   testInfo: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   testDetails: {
     fontSize: 12,
@@ -513,6 +530,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    backgroundColor: 'transparent',
   },
   score: {
     fontSize: 16,
@@ -564,9 +582,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     gap: 12,
+    backgroundColor: 'transparent',
   },
   detailContent: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   detailLabel: {
     fontSize: 12,

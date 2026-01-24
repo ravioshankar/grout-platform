@@ -29,17 +29,25 @@ export default function OnboardingScreen() {
 
     setLoading(true);
     try {
-      // Create new profile
-      const profile = await apiClient.post<any>('/api/v1/onboarding-profiles/', {
-        profile_name: `${selectedState.name} - ${selectedTestType.name}`,
-        state: selectedState.code,
-        test_type: selectedTestType.id,
-      });
+      const profiles = await apiClient.get<any[]>('/api/v1/onboarding-profiles/');
+      const existingProfile = profiles.find(
+        p => p.state === selectedState.code && p.test_type === selectedTestType.id
+      );
 
-      // Activate the new profile
-      await apiClient.post(`/api/v1/onboarding-profiles/${profile.id}/activate`, {});
+      let profileId;
+      if (existingProfile) {
+        profileId = existingProfile.id;
+      } else {
+        const profile = await apiClient.post<any>('/api/v1/onboarding-profiles/', {
+          profile_name: `${selectedState.name} - ${selectedTestType.name}`,
+          state: selectedState.code,
+          test_type: selectedTestType.id,
+        });
+        profileId = profile.id;
+      }
 
-      // Sync to local storage
+      await apiClient.post(`/api/v1/onboarding-profiles/${profileId}/activate`, {});
+
       const { syncActiveProfileToLocal } = await import('@/utils/profile-sync');
       await syncActiveProfileToLocal();
 
@@ -129,29 +137,27 @@ export default function OnboardingScreen() {
         {/* Test Type Selection */}
         <ThemedView style={styles.section}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>Choose Your Test Type</ThemedText>
-          <ScrollView style={styles.testTypesList} showsVerticalScrollIndicator={false}>
-            {filteredTestTypes.map((type) => (
-              <TouchableOpacity
-                key={type.id}
-                style={[
-                  styles.testTypeCard,
-                  { backgroundColor: Colors[currentScheme].cardBackground },
-                  selectedTestType?.id === type.id && styles.selectedCard
-                ]}
-                onPress={() => setSelectedTestType(type)}
-                activeOpacity={0.7}
-              >
-                <ThemedText style={styles.testTypeIcon}>{type.icon}</ThemedText>
-                <ThemedView style={styles.testTypeInfo}>
-                  <ThemedText type="defaultSemiBold" style={styles.testTypeTitle}>{type.name}</ThemedText>
-                  <ThemedText style={styles.testTypeDescription}>{type.description}</ThemedText>
-                  {type.requiresCDL && (
-                    <ThemedText style={styles.cdlBadge}>Requires CDL</ThemedText>
-                  )}
-                </ThemedView>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          {filteredTestTypes.map((type) => (
+            <TouchableOpacity
+              key={type.id}
+              style={[
+                styles.testTypeCard,
+                { backgroundColor: Colors[currentScheme].cardBackground },
+                selectedTestType?.id === type.id && styles.selectedCard
+              ]}
+              onPress={() => setSelectedTestType(type)}
+              activeOpacity={0.7}
+            >
+              <ThemedText style={styles.testTypeIcon}>{type.icon}</ThemedText>
+              <ThemedView style={styles.testTypeInfo}>
+                <ThemedText type="defaultSemiBold" style={styles.testTypeTitle}>{type.name}</ThemedText>
+                <ThemedText style={styles.testTypeDescription}>{type.description}</ThemedText>
+                {type.requiresCDL && (
+                  <ThemedText style={styles.cdlBadge}>Requires CDL</ThemedText>
+                )}
+              </ThemedView>
+            </TouchableOpacity>
+          ))}
         </ThemedView>
 
         {/* Continue Button */}
@@ -270,9 +276,6 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: 14,
     fontWeight: '600',
-  },
-  testTypesList: {
-    maxHeight: 300,
   },
   testTypeCard: {
     flexDirection: 'row',

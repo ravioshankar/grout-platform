@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -56,6 +56,28 @@ export default function ProfileSelectionScreen() {
     router.push('/onboarding');
   };
 
+  const handleDeleteProfile = (profileId: number, isActive: boolean) => {
+    if (isActive) {
+      Alert.alert('Cannot Delete', 'Cannot delete active profile');
+      return;
+    }
+    Alert.alert('Delete Profile', 'Are you sure?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await apiClient.delete(`/api/v1/onboarding-profiles/${profileId}`);
+            setProfiles(profiles.filter(p => p.id !== profileId));
+          } catch (error) {
+            Alert.alert('Error', 'Failed to delete profile');
+          }
+        }
+      }
+    ]);
+  };
+
   if (loading) {
     return (
       <ThemedView style={[styles.container, styles.centered]}>
@@ -96,15 +118,22 @@ export default function ProfileSelectionScreen() {
                     {profile.state} • {profile.test_type}
                   </ThemedText>
                 </ThemedView>
-                {activating === profile.id ? (
-                  <ActivityIndicator size="small" color="#16A34A" />
-                ) : profile.is_active ? (
-                  <ThemedView style={styles.activeBadge}>
-                    <ThemedText style={styles.activeBadgeText}>Active</ThemedText>
-                  </ThemedView>
-                ) : (
-                  <Ionicons name="chevron-forward" size={20} color={Colors[currentScheme].icon} />
-                )}
+                <ThemedView style={styles.profileActions}>
+                  {!profile.is_active && (
+                    <TouchableOpacity onPress={() => handleDeleteProfile(profile.id, profile.is_active)}>
+                      <Ionicons name="trash-outline" size={20} color="#DC2626" />
+                    </TouchableOpacity>
+                  )}
+                  {activating === profile.id ? (
+                    <ActivityIndicator size="small" color="#16A34A" />
+                  ) : profile.is_active ? (
+                    <ThemedView style={styles.activeBadge}>
+                      <ThemedText style={styles.activeBadgeText}>Active</ThemedText>
+                    </ThemedView>
+                  ) : (
+                    <Ionicons name="chevron-forward" size={20} color={Colors[currentScheme].icon} />
+                  )}
+                </ThemedView>
               </TouchableOpacity>
             ))}
           </ThemedView>
@@ -186,6 +215,11 @@ const styles = StyleSheet.create({
   profileDetails: {
     fontSize: 13,
     opacity: 0.7,
+  },
+  profileActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   activeBadge: {
     backgroundColor: '#16A34A',

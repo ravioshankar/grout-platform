@@ -149,11 +149,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+    backgroundColor: 'transparent',
   },
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    backgroundColor: 'transparent',
   },
   title: {
     fontSize: 16,
@@ -163,16 +165,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     marginBottom: 8,
+    backgroundColor: 'transparent',
   },
   progressBar: {
     flex: 1,
     height: 8,
     backgroundColor: '#e0e0e0',
     borderRadius: 4,
+    overflow: 'hidden',
   },
   progressFill: {
     height: 8,
     borderRadius: 4,
+    backgroundColor: 'transparent',
   },
   progressText: {
     fontSize: 14,
@@ -180,7 +185,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 12,
-    color: '#666',
+    opacity: 0.7,
     textAlign: 'center',
   },
 });
