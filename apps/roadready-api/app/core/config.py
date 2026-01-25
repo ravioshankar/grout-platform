@@ -11,9 +11,9 @@ class Settings(BaseSettings):
     
     SECRET_KEY: str = secrets.token_urlsafe(32)
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    SESSION_INACTIVITY_HOURS: int = 2
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+    SESSION_INACTIVITY_HOURS: int = 168  # 7 days
     
     # OAuth Settings
     GOOGLE_CLIENT_ID: str = ""

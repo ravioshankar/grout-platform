@@ -9,6 +9,19 @@ class CategoryPerformance(SQLModel):
     best_score: int
     worst_score: int
 
+class WeakArea(SQLModel):
+    category: str
+    average_score: float
+    total_attempts: int
+
+class ProfileStats(SQLModel):
+    profile_name: str
+    state: str
+    test_type: str
+    total_tests: int
+    average_score: float
+    last_test_date: Optional[datetime] = None
+
 class TestStatistics(SQLModel):
     total_tests: int
     average_score: float
@@ -20,6 +33,12 @@ class TestStatistics(SQLModel):
     improvement_rate: Optional[float] = None  # percentage improvement
     category_performance: List[CategoryPerformance]
     recent_trend: str  # "improving", "declining", "stable"
+    total_profiles: int
+    active_profile: Optional[ProfileStats] = None
+    tests_this_week: int
+    tests_this_month: int
+    current_streak: int
+    longest_streak: int
 
 class TestRecordPaginated(SQLModel):
     items: List[dict]
