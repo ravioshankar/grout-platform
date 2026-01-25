@@ -27,6 +27,8 @@ class User(SQLModel, table=True):
     # Account Status
     is_active: bool = Field(default=True)
     email_verified: bool = Field(default=False)
+    verification_token: Optional[str] = Field(default=None, max_length=255)
+    verification_token_expires: Optional[datetime] = Field(default=None)
     
     # Timestamps
     created_at: datetime = Field(default_factory=datetime.utcnow)

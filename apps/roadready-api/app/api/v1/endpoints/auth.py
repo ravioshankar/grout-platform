@@ -12,6 +12,7 @@ from app.models.user import User
 from app.schemas.user import Token, LoginRequest, UserRead, UserCreate
 from app.schemas.auth import SignupRequest, UserProfileUpdate, TokenResponse, ChangePasswordRequest, ChangeEmailRequest
 from app.core.config import settings
+import secrets
 
 router = APIRouter()
 
@@ -233,7 +234,7 @@ async def update_profile(
     
     current_user.updated_at = datetime.utcnow()
     db.add(current_user)
-    db.flush()
+    db.commit()
     db.refresh(current_user)
     return current_user
 
@@ -265,6 +266,7 @@ async def change_password(
     current_user.hashed_password = get_password_hash(password_data.new_password)
     current_user.updated_at = datetime.utcnow()
     db.add(current_user)
+    db.commit()
     return {"message": "Password changed successfully"}
 
 @router.post(
@@ -297,7 +299,66 @@ async def change_email(
     current_user.email_verified = False
     current_user.updated_at = datetime.utcnow()
     db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
     return current_user
+
+@router.post(
+    "/send-verification-email",
+    summary="Send verification email",
+    description="Send email verification link to user's email",
+)
+async def send_verification_email(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from app.services.email_service import EmailService
+    
+    try:
+        if current_user.email_verified:
+            raise HTTPException(status_code=400, detail="Email already verified")
+        
+        token = secrets.token_urlsafe(32)
+        current_user.verification_token = token
+        current_user.verification_token_expires = datetime.utcnow() + timedelta(hours=24)
+        db.add(current_user)
+        db.commit()
+        
+        base_url = str(request.base_url).rstrip('/')
+        await EmailService.send_verification_email(current_user.email, token, base_url)
+        
+        return {"message": "Verification email sent"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error sending verification email: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to send verification email: {str(e)}")
+
+@router.get(
+    "/verify-email",
+    summary="Verify email",
+    description="Verify user email with token",
+)
+async def verify_email(token: str, db: Session = Depends(get_db)):
+    user = db.exec(select(User).where(
+        User.verification_token == token,
+        User.verification_token_expires > datetime.utcnow()
+    )).first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+    
+    user.email_verified = True
+    user.verification_token = None
+    user.verification_token_expires = None
+    user.updated_at = datetime.utcnow()
+    db.add(user)
+    db.commit()
+    
+    return {"message": "Email verified successfully"}
 
 @router.get(
     "/login/{provider}",

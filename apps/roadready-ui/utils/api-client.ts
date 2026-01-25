@@ -51,7 +51,9 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     
     console.log('API Request:', restConfig.method || 'GET', url);
-    console.log('Base URL:', this.baseURL);
+    if (requiresAuth && mergedHeaders['Authorization']) {
+      console.log('Auth token present:', mergedHeaders['Authorization'].substring(0, 20) + '...');
+    }
     
     const response = await fetch(url, {
       ...restConfig,
@@ -70,18 +72,16 @@ class ApiClient {
         throw new Error('Session expired. Please login again.');
       }
       
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      const error = await response.json().catch(() => ({ message: `HTTP ${response.status}: ${response.statusText}` }));
       console.log('API Error Response:', JSON.stringify(error));
       
       if (error.detail && Array.isArray(error.detail)) {
         const firstError = error.detail[0];
         const errorMsg = String(firstError.msg || 'Validation error');
-        console.log('Extracted validation error:', errorMsg);
         throw new Error(errorMsg);
       }
       
-      const errorMsg = String(error.message || error.detail || 'Request failed');
-      console.log('Extracted error:', errorMsg);
+      const errorMsg = String(error.message || error.detail || `HTTP ${response.status}: ${response.statusText}`);
       throw new Error(errorMsg);
     }
 

@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, Alert, RefreshControl, ActivityIndicator, Image, TextInput } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator, Image, TextInput } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ThemedAlert } from '@/components/themed-alert';
 import { AppHeader } from '@/components/app-header';
 import { getTestResults, clearTestResults } from '@/utils/storage';
 import { getUserProfile, getSetting, saveSetting, deleteSetting } from '@/utils/database';
@@ -17,6 +18,7 @@ import { insertMockData } from '@/utils/mock-data';
 import { runMigrations } from '@/utils/database';
 import Constants from 'expo-constants';
 import { apiClient } from '@/utils/api-client';
+import { useThemedAlert } from '@/hooks/use-themed-alert';
 
 export default function ProfileScreen() {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -24,6 +26,8 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [sendingVerification, setSendingVerification] = useState(false);
   const [userState, setUserState] = useState('');
   const [userTestType, setUserTestType] = useState('');
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
@@ -36,6 +40,7 @@ export default function ProfileScreen() {
   const [showProfileSwitcher, setShowProfileSwitcher] = useState(false);
   const { isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
+  const { alertConfig, showAlert, hideAlert } = useThemedAlert();
 
   const stats = useMemo(() => {
     if (testResults.length === 0) return { 
@@ -83,6 +88,7 @@ export default function ProfileScreen() {
 
       const userData = await apiClient.get<any>('/api/v1/auth/me');
       setUserEmail(userData.email || '');
+      setEmailVerified(userData.email_verified || false);
       setUserName(userData.first_name && userData.last_name 
         ? `${userData.first_name} ${userData.last_name}` 
         : userData.first_name || userData.last_name || '');
@@ -100,8 +106,11 @@ export default function ProfileScreen() {
         setLastLogin(new Date(lastLoginTime).toLocaleString());
       }
       await saveSetting('last_login', new Date().toISOString());
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load user profile:', error);
+      if (error.message?.includes('Session expired')) {
+        router.replace('/login');
+      }
     }
   };
 
@@ -125,7 +134,7 @@ export default function ProfileScreen() {
       await loadUserProfile();
       setShowProfileSwitcher(false);
     } catch (error) {
-      Alert.alert('Error', 'Failed to switch profile');
+      showAlert('Error', 'Failed to switch profile');
     }
   };
 
@@ -175,9 +184,27 @@ export default function ProfileScreen() {
       await loadUserProfile();
     } catch (error: any) {
       console.error('Failed to save name:', error);
-      Alert.alert('Error', error.message || 'Failed to save name');
+      showAlert('Error', error.message || 'Failed to save name');
     } finally {
       setIsSavingName(false);
+    }
+  };
+
+  const handleSendVerification = async () => {
+    setSendingVerification(true);
+    try {
+      await apiClient.post('/api/v1/auth/send-verification-email', {});
+      showAlert('Success', 'Verification email sent! Please check your inbox.');
+    } catch (error: any) {
+      if (error.message?.includes('Session expired')) {
+        showAlert('Error', 'Session expired. Please login again.', [
+          { text: 'OK', onPress: () => router.replace('/login') }
+        ]);
+      } else {
+        showAlert('Error', error.message || 'Failed to send verification email');
+      }
+    } finally {
+      setSendingVerification(false);
     }
   };
 
@@ -358,7 +385,19 @@ export default function ProfileScreen() {
             </ThemedView>
             <ThemedView style={styles.detailContentHorizontal}>
               <ThemedText style={styles.detailLabel}>Email</ThemedText>
-              <ThemedText style={styles.detailValue}>{userEmail || 'Not set'}</ThemedText>
+              <ThemedView style={styles.emailRow}>
+                <ThemedText style={styles.detailValue}>{userEmail || 'Not set'}</ThemedText>
+                {!emailVerified && userEmail && (
+                  <ThemedView style={styles.unverifiedBadge}>
+                    <Ionicons name="alert-circle" size={14} color="#FF9500" />
+                  </ThemedView>
+                )}
+                {emailVerified && (
+                  <ThemedView style={styles.verifiedBadge}>
+                    <Ionicons name="checkmark-circle" size={14} color="#34C759" />
+                  </ThemedView>
+                )}
+              </ThemedView>
             </ThemedView>
           </ThemedView>
           
@@ -443,6 +482,33 @@ export default function ProfileScreen() {
       )}
 
       {/* Quick Actions */}
+      {!emailVerified && userEmail && (
+        <ThemedView style={[styles.card, { backgroundColor: Colors[currentScheme].cardBackground }]}>
+          <ThemedView style={styles.verificationCard}>
+            <ThemedView style={styles.verificationIcon}>
+              <Ionicons name="mail-unread" size={32} color="#FF9500" />
+            </ThemedView>
+            <ThemedView style={styles.verificationContent}>
+              <ThemedText type="defaultSemiBold" style={styles.verificationTitle}>Verify Your Email</ThemedText>
+              <ThemedText style={styles.verificationText}>Please verify your email to access all features</ThemedText>
+            </ThemedView>
+            <TouchableOpacity 
+              style={[styles.verifyButton, sendingVerification && styles.disabledButton]}
+              onPress={handleSendVerification}
+              disabled={sendingVerification}
+              activeOpacity={0.7}
+            >
+              {sendingVerification ? (
+                <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <ThemedText style={styles.verifyButtonText}>Send Link</ThemedText>
+              )}
+            </TouchableOpacity>
+          </ThemedView>
+        </ThemedView>
+      )}
+
+      {/* Quick Actions */}
       <ThemedView style={[styles.card, { backgroundColor: Colors[currentScheme].cardBackground }]}>
         <ThemedText type="subtitle" style={styles.cardTitle}>Quick Actions</ThemedText>
         <ThemedView style={styles.actionGrid}>
@@ -516,6 +582,16 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </ThemedView>
       </ThemedView>
+      
+      {alertConfig && (
+        <ThemedAlert
+          visible={true}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          buttons={alertConfig.buttons}
+          onDismiss={hideAlert}
+        />
+      )}
     </ScrollView>
   );
 }
@@ -555,6 +631,17 @@ const styles = StyleSheet.create({
   detailContent: { flex: 1, backgroundColor: 'transparent' },
   detailLabel: { fontSize: 12, opacity: 0.6, marginBottom: 4 },
   detailValue: { fontSize: 15, fontWeight: '600' },
+  emailRow: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'transparent' },
+  verifiedBadge: { backgroundColor: 'transparent' },
+  unverifiedBadge: { backgroundColor: 'transparent' },
+  verificationCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'transparent' },
+  verificationIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#FFF3E0', alignItems: 'center', justifyContent: 'center' },
+  verificationContent: { flex: 1, backgroundColor: 'transparent' },
+  verificationTitle: { fontSize: 16, marginBottom: 4 },
+  verificationText: { fontSize: 13, opacity: 0.7 },
+  verifyButton: { backgroundColor: '#FF9500', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  verifyButtonText: { color: '#FFF', fontSize: 13, fontWeight: '600' },
+  disabledButton: { opacity: 0.5 },
   
   quickStatsCard: { marginHorizontal: 16, marginTop: 16, padding: 16, borderRadius: 16 },
   quickStatsRow: { flexDirection: 'row', justifyContent: 'space-around', gap: 8, backgroundColor: 'transparent' },
