@@ -237,9 +237,11 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+    backgroundColor: 'transparent',
   },
   section: {
     marginBottom: 32,
+    backgroundColor: 'transparent',
   },
   sectionTitle: {
     marginBottom: 16,
@@ -329,6 +331,7 @@ const styles = StyleSheet.create({
   },
   licenseInfo: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   testTypeItem: {
     padding: 16,
@@ -352,6 +355,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    backgroundColor: 'transparent',
   },
   categoryItem: {
     width: '48%',

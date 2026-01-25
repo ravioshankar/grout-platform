@@ -3,8 +3,8 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { ThemeProvider as AppThemeProvider } from '@/contexts/theme-context';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const headerStyle = {
   headerStyle: {
@@ -52,6 +52,9 @@ export default function RootLayout() {
           <Stack.Screen name="privacy-policy" options={{ ...headerStyle, title: 'Privacy Policy' }} />
           <Stack.Screen name="profile/edit-profile" options={{ ...headerStyle, title: 'Edit Profile' }} />
           <Stack.Screen name="profile/change-password" options={{ ...headerStyle, title: 'Change Password' }} />
+          <Stack.Screen name="profile/sessions" options={{ ...headerStyle, title: 'Active Sessions' }} />
+          <Stack.Screen name="profile/statistics" options={{ ...headerStyle, title: 'Statistics' }} />
+
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
         <StatusBar style="light" />

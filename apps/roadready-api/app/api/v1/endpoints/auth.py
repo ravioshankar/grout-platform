@@ -233,6 +233,8 @@ async def update_profile(
     
     current_user.updated_at = datetime.utcnow()
     db.add(current_user)
+    db.flush()
+    db.refresh(current_user)
     return current_user
 
 @router.post(

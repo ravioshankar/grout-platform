@@ -238,6 +238,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 3,
+    backgroundColor: 'transparent',
   },
   questionContainer: {
     flex: 1,
@@ -297,6 +298,7 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingHorizontal: 16,
     paddingBottom: 20,
+    backgroundColor: 'transparent',
   },
   navButton: {
     flex: 1,

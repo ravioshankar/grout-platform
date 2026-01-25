@@ -111,7 +111,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         session.is_active = False
         session.revoked_at = datetime.utcnow()
         db.add(session)
-        db.commit()
+        db.flush()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Session expired due to inactivity"

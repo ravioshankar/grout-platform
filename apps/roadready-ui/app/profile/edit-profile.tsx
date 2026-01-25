@@ -37,6 +37,7 @@ export default function EditProfileScreen() {
       setTestType(data.test_type || '');
     } catch (error) {
       console.error('Failed to load profile:', error);
+      Alert.alert('Error', 'Failed to load profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -78,9 +79,10 @@ export default function EditProfileScreen() {
   const selectedTestType = TEST_TYPES.find(t => t.id === testType);
 
   return (
-    <ScrollView style={styles.container}>
-      <AppHeader title="Edit Profile" showLogo={false} />
-      <ThemedView style={styles.content}>
+    <ThemedView style={styles.container}>
+      
+      <ScrollView style={styles.scrollContent}>
+        <ThemedView style={styles.content} backgroundColor="transparent">
         <ThemedView style={styles.section}>
           <ThemedText style={styles.label}>First Name *</ThemedText>
           <TextInput
@@ -193,67 +195,28 @@ export default function EditProfileScreen() {
             <ThemedText style={styles.saveButtonText}>Save Changes</ThemedText>
           )}
         </TouchableOpacity>
-      </ThemedView>
-    </ScrollView>
+        </ThemedView>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    padding: 20,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    fontSize: 16,
-  },
-  dropdown: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  dropdownList: {
-    maxHeight: 200,
-    borderWidth: 1,
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  dropdownItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-  },
-  saveButton: {
-    backgroundColor: '#16A34A',
-    padding: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  saveButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
+  container: { flex: 1 },
+  loadingContainer: { justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 20, paddingHorizontal: 20, borderBottomWidth: 1 },
+  backButton: { width: 32 },
+  headerTitle: { fontSize: 20, fontWeight: '600', flex: 1, textAlign: 'center' },
+  headerSpacer: { width: 32, backgroundColor: 'transparent' },
+  scrollContent: { flex: 1 },
+  content: { padding: 20, gap: 20 },
+  section: { gap: 8, backgroundColor: 'transparent' },
+  label: { fontSize: 14, fontWeight: '600' },
+  input: { padding: 16, borderRadius: 12, borderWidth: 1, fontSize: 16 },
+  dropdown: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderRadius: 12, borderWidth: 1 },
+  dropdownList: { maxHeight: 200, borderWidth: 1, borderRadius: 12, marginTop: 8 },
+  dropdownItem: { padding: 16, borderBottomWidth: 1 },
+  saveButton: { backgroundColor: '#16A34A', padding: 18, borderRadius: 12, alignItems: 'center', marginTop: 20, marginBottom: 40 },
+  disabledButton: { opacity: 0.6 },
+  saveButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
 });

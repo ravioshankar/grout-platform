@@ -15,8 +15,8 @@ export function AppHeader({ title, showLogo = true }: AppHeaderProps) {
   
   return (
     <ThemedView style={[styles.header, { 
-      backgroundColor: Colors[currentScheme].cardBackground,
-      borderBottomColor: Colors[currentScheme].border
+      backgroundColor: isDark ? '#111827' : '#FFF',
+      borderBottomColor: isDark ? '#1F2937' : '#E5E7EB'
     }]}>
       {showLogo && (
         <ThemedView style={styles.logoContainer}>
@@ -28,31 +28,6 @@ export function AppHeader({ title, showLogo = true }: AppHeaderProps) {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  logoContainer: {
-    height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoPlaceholder: {
-    height: 60,
-    width: 60,
-  },
-  title: {
-    marginTop: 8,
-    color: '#b5b8bfff',
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '600',
-  },
+  header: { alignItems: 'center', paddingVertical: 24, paddingHorizontal: 16, borderBottomWidth: 1 },
+  logoContainer: { height: 80, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' },
 });

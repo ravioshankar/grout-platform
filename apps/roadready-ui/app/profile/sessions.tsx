@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { AppHeader } from '@/components/app-header';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
@@ -72,12 +72,14 @@ export default function SessionsScreen() {
   }
 
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#16A34A" />}
-    >
-      <AppHeader title="Active Sessions" />
-      <ThemedView style={styles.content}>
+    <ThemedView style={styles.container}>
+    
+      
+      <ScrollView 
+        style={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#16A34A" />}
+      >
+        <ThemedView style={styles.content} backgroundColor="transparent">
         <ThemedText style={styles.description}>
           Manage devices where you're logged in. Revoke access to any suspicious sessions.
         </ThemedText>
@@ -128,23 +130,29 @@ export default function SessionsScreen() {
             </ThemedView>
           ))
         )}
-      </ThemedView>
-    </ScrollView>
+        </ThemedView>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16, gap: 16 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, paddingVertical: 40 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 20, paddingHorizontal: 20, borderBottomWidth: 1 },
+  backButton: { width: 32 },
+  headerTitle: { fontSize: 20, fontWeight: '600', flex: 1, textAlign: 'center' },
+  headerSpacer: { width: 32, backgroundColor: 'transparent' },
+  scrollContent: { flex: 1 },
+  content: { padding: 20, gap: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, paddingVertical: 40, backgroundColor: 'transparent' },
   description: { fontSize: 14, opacity: 0.7, marginBottom: 8 },
-  sessionCard: { padding: 16, borderRadius: 12, gap: 16 },
-  sessionHeader: { flexDirection: 'row', gap: 12 },
-  sessionInfo: { flex: 1, gap: 4 },
+  sessionCard: { padding: 16, borderRadius: 12, gap: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  sessionHeader: { flexDirection: 'row', gap: 12, backgroundColor: 'transparent' },
+  sessionInfo: { flex: 1, gap: 6, backgroundColor: 'transparent' },
   sessionDevice: { fontSize: 16, fontWeight: '600' },
-  currentBadge: { color: '#16A34A', fontSize: 14 },
-  sessionDetail: { fontSize: 12, opacity: 0.7 },
-  revokeButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, backgroundColor: '#FEE2E2', borderRadius: 8 },
+  currentBadge: { color: '#16A34A', fontSize: 14, fontWeight: '700' },
+  sessionDetail: { fontSize: 13, opacity: 0.7 },
+  revokeButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, backgroundColor: '#FEE2E2', borderRadius: 8, marginTop: 4 },
   revokeText: { color: '#DC2626', fontWeight: '600' },
-  emptyText: { fontSize: 18, fontWeight: '600', opacity: 0.7 },
+  emptyText: { fontSize: 16, opacity: 0.7 },
 });

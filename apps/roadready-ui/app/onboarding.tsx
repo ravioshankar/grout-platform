@@ -190,6 +190,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
     paddingHorizontal: 20,
+    backgroundColor: 'transparent',
   },
   welcomeText: {
     marginTop: 20,
@@ -204,9 +205,11 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 20,
     paddingBottom: 40,
+    backgroundColor: 'transparent',
   },
   section: {
     marginBottom: 32,
+    backgroundColor: 'transparent',
   },
   sectionTitle: {
     marginBottom: 16,
@@ -300,6 +303,7 @@ const styles = StyleSheet.create({
   },
   testTypeInfo: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   testTypeTitle: {
     fontSize: 16,

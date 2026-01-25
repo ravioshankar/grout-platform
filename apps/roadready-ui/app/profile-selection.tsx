@@ -166,6 +166,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
     paddingHorizontal: 20,
+    backgroundColor: 'transparent',
   },
   title: {
     marginTop: 20,
@@ -180,9 +181,11 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 20,
     paddingBottom: 40,
+    backgroundColor: 'transparent',
   },
   section: {
     marginBottom: 32,
+    backgroundColor: 'transparent',
   },
   sectionTitle: {
     marginBottom: 16,
@@ -207,6 +210,7 @@ const styles = StyleSheet.create({
   },
   profileInfo: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   profileName: {
     fontSize: 16,
@@ -220,6 +224,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    backgroundColor: 'transparent',
   },
   activeBadge: {
     backgroundColor: '#16A34A',
@@ -231,6 +236,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
     fontWeight: '600',
+    backgroundColor: 'transparent',
   },
   createButton: {
     backgroundColor: '#16A34A',

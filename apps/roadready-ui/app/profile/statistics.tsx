@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import { StyleSheet, ScrollView, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
+import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { AppHeader } from '@/components/app-header';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
@@ -52,7 +52,13 @@ export default function StatisticsScreen() {
   if (!stats || stats.total_tests === 0) {
     return (
       <ThemedView style={styles.container}>
-        <AppHeader title="Statistics" />
+        <ThemedView style={[styles.header, { borderBottomColor: Colors[currentScheme].border }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={Colors[currentScheme].text} />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>Statistics</ThemedText>
+          <ThemedView style={styles.headerSpacer} />
+        </ThemedView>
         <ThemedView style={styles.center}>
           <Ionicons name="analytics-outline" size={64} color="#999" />
           <ThemedText style={styles.emptyText}>No test data yet</ThemedText>
@@ -63,12 +69,20 @@ export default function StatisticsScreen() {
   }
 
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#16A34A" />}
-    >
-      <AppHeader title="Statistics" />
-      <ThemedView style={styles.content}>
+    <ThemedView style={styles.container}>
+      <ThemedView style={[styles.header, { borderBottomColor: Colors[currentScheme].border }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={Colors[currentScheme].text} />
+        </TouchableOpacity>
+        <ThemedText style={styles.headerTitle}>Statistics</ThemedText>
+        <ThemedView style={styles.headerSpacer} />
+      </ThemedView>
+      
+      <ScrollView 
+        style={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#16A34A" />}
+      >
+        <ThemedView style={styles.content} backgroundColor="transparent">
         
         {/* Overview Stats */}
         <ThemedView style={[styles.card, { backgroundColor: Colors[currentScheme].cardBackground }]}>
@@ -174,39 +188,45 @@ export default function StatisticsScreen() {
             </ThemedView>
           </ThemedView>
         )}
-      </ThemedView>
-    </ScrollView>
+        </ThemedView>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16, gap: 16 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
-  card: { padding: 20, borderRadius: 12, gap: 16 },
-  statsGrid: { flexDirection: 'row', gap: 16 },
-  statItem: { flex: 1, alignItems: 'center', gap: 8 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 20, paddingHorizontal: 20, borderBottomWidth: 1 },
+  backButton: { width: 32 },
+  headerTitle: { fontSize: 20, fontWeight: '600', flex: 1, textAlign: 'center' },
+  headerSpacer: { width: 32, backgroundColor: 'transparent' },
+  scrollContent: { flex: 1 },
+  content: { padding: 20, gap: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, backgroundColor: 'transparent' },
+  card: { padding: 20, borderRadius: 16, gap: 16 },
+  statsGrid: { flexDirection: 'row', gap: 16, backgroundColor: 'transparent' },
+  statItem: { flex: 1, alignItems: 'center', gap: 8, backgroundColor: 'transparent' },
   statValue: { fontSize: 24, fontWeight: 'bold' },
   statLabel: { fontSize: 12, opacity: 0.7 },
-  scoreRow: { flexDirection: 'row', justifyContent: 'space-around' },
-  scoreItem: { alignItems: 'center', gap: 8 },
+  scoreRow: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: 'transparent' },
+  scoreItem: { alignItems: 'center', gap: 8, backgroundColor: 'transparent' },
   scoreLabel: { fontSize: 14, opacity: 0.7 },
   scoreValue: { fontSize: 28, fontWeight: 'bold' },
-  trendContainer: { alignItems: 'center', gap: 8 },
+  trendContainer: { alignItems: 'center', gap: 8, backgroundColor: 'transparent' },
   trendText: { fontSize: 16, fontWeight: '600' },
   trendValue: { fontSize: 14, opacity: 0.7 },
-  categoryItem: { gap: 8 },
-  categoryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  categoryItem: { gap: 8, backgroundColor: 'transparent' },
+  categoryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'transparent' },
   categoryName: { fontSize: 16, fontWeight: '600' },
   categoryScore: { fontSize: 18, fontWeight: 'bold' },
   progressBar: { height: 8, backgroundColor: '#E5E7EB', borderRadius: 4, overflow: 'hidden' },
   progressFill: { height: '100%' },
   categoryAttempts: { fontSize: 12, opacity: 0.6 },
   weakItem: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, backgroundColor: '#FEF3C7', borderRadius: 8 },
-  weakContent: { flex: 1 },
+  weakContent: { flex: 1, backgroundColor: 'transparent' },
   weakCategory: { fontSize: 16, fontWeight: '600', color: '#92400E' },
   weakScore: { fontSize: 14, opacity: 0.7, color: '#92400E' },
-  timeContainer: { alignItems: 'center', gap: 8 },
+  timeContainer: { alignItems: 'center', gap: 8, backgroundColor: 'transparent' },
   timeValue: { fontSize: 32, fontWeight: 'bold' },
   timeLabel: { fontSize: 14, opacity: 0.7 },
   emptyText: { fontSize: 18, fontWeight: '600', opacity: 0.7 },
