@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Linking } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -9,6 +9,7 @@ import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
 import { saveSetting } from '@/utils/database';
 import { apiClient } from '@/utils/api-client';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function SignupScreen() {
   const { isDark } = useTheme();
@@ -54,6 +55,17 @@ export default function SignupScreen() {
       setError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOAuthLogin = async (provider: 'google' | 'facebook') => {
+    try {
+      const baseUrl = 'http://localhost:8888';
+      const url = `${baseUrl}/api/v1/auth/login/${provider}`;
+      await Linking.openURL(url);
+      setError('OAuth login requires web browser. Please use email/password for mobile.');
+    } catch (error) {
+      setError('OAuth not available on mobile. Please use email/password.');
     }
   };
 
@@ -123,6 +135,36 @@ export default function SignupScreen() {
           )}
         </TouchableOpacity>
 
+        <ThemedView style={styles.divider}>
+          <ThemedView style={[styles.dividerLine, { backgroundColor: Colors[currentScheme].border }]} />
+          <ThemedText style={styles.dividerText}>OR</ThemedText>
+          <ThemedView style={[styles.dividerLine, { backgroundColor: Colors[currentScheme].border }]} />
+        </ThemedView>
+
+        <TouchableOpacity
+          style={[styles.oauthButton, { 
+            backgroundColor: Colors[currentScheme].cardBackground,
+            borderColor: Colors[currentScheme].border
+          }]}
+          onPress={() => handleOAuthLogin('google')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="logo-google" size={20} color="#DB4437" />
+          <ThemedText style={styles.oauthButtonText}>Continue with Google</ThemedText>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.oauthButton, { 
+            backgroundColor: Colors[currentScheme].cardBackground,
+            borderColor: Colors[currentScheme].border
+          }]}
+          onPress={() => handleOAuthLogin('facebook')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="logo-facebook" size={20} color="#1877F2" />
+          <ThemedText style={styles.oauthButtonText}>Continue with Facebook</ThemedText>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.linkButton}
           onPress={() => router.back()}
@@ -187,5 +229,33 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 14,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 8,
+    backgroundColor: 'transparent',
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 12,
+    opacity: 0.5,
+  },
+  oauthButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  oauthButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
