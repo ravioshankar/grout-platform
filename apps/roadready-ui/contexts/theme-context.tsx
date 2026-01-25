@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Animated } from 'react-native';
-import { initDatabase, saveSetting, getSetting } from '@/utils/database';
+import { saveSetting, getSetting } from '@/utils/database';
 
 type Theme = 'light' | 'dark' | 'auto';
 
@@ -25,7 +25,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const loadTheme = async () => {
     try {
-      await initDatabase();
       const savedTheme = await getSetting('theme');
       if (savedTheme) {
         setThemeState(savedTheme as Theme);

@@ -23,13 +23,17 @@ export default function StatisticsScreen() {
   const loadStats = async () => {
     try {
       const [statsData, weakData] = await Promise.all([
-        apiClient.get('/api/v1/statistics/'),
-        apiClient.get('/api/v1/statistics/weak-areas?threshold=70')
+        apiClient.get('/api/v1/statistics/').catch(() => null),
+        apiClient.get('/api/v1/statistics/weak-areas?threshold=70').catch(() => ({ weak_areas: [] }))
       ]);
-      setStats(statsData);
-      setWeakAreas(weakData.weak_areas || []);
+      
+      if (statsData) {
+        setStats(statsData);
+      }
+      setWeakAreas(weakData?.weak_areas || []);
     } catch (error) {
       console.error('Failed to load statistics:', error);
+      setStats(null);
     } finally {
       setLoading(false);
     }

@@ -8,6 +8,8 @@ import { US_STATES } from '@/constants/states';
 import { State, QuestionCategory } from '@/constants/types';
 import { TEST_TYPES, TEST_CATEGORIES, TestType, getTestTypeById } from '@/constants/test-types';
 import { getSetting } from '@/utils/database';
+import { useTheme } from '@/contexts/theme-context';
+import { Colors } from '@/constants/theme';
 
 const TEST_MODES = [
   { id: 'full-test', title: 'Full DMV Test', description: 'Complete practice test with timer' },
@@ -24,6 +26,8 @@ const CATEGORIES = [
 ];
 
 export default function SetupScreen() {
+  const { isDark } = useTheme();
+  const theme = isDark ? Colors.dark : Colors.light;
   const [selectedState, setSelectedState] = useState<State | null>(null);
   const [selectedTestMode, setSelectedTestMode] = useState<string | null>(null);
   const [selectedLicenseType, setSelectedLicenseType] = useState<TestType | null>(null);
@@ -83,8 +87,9 @@ export default function SetupScreen() {
     (selectedTestMode === 'full-test' || selectedCategory);
 
   return (
-    <ScrollView style={styles.container}>
+    <ThemedView style={styles.container}>
       <AppHeader title="Setup Test" />
+      <ScrollView style={styles.scrollView}>
       <ThemedView style={styles.content}>
 
       {/* State Selection */}
@@ -93,7 +98,8 @@ export default function SetupScreen() {
         <TouchableOpacity
           style={[
             styles.dropdown,
-            selectedState && styles.selectedItem
+            { borderColor: theme.border, backgroundColor: theme.cardBackground },
+            selectedState && { borderColor: '#16A34A', backgroundColor: isDark ? 'rgba(22, 163, 74, 0.15)' : '#F0FDF4', borderWidth: 2 }
           ]}
           onPress={() => setShowStateDropdown(!showStateDropdown)}
           activeOpacity={0.7}
@@ -105,11 +111,11 @@ export default function SetupScreen() {
         </TouchableOpacity>
         
         {showStateDropdown && (
-          <ScrollView style={styles.dropdownList} nestedScrollEnabled>
+          <ScrollView style={[styles.dropdownList, { borderColor: theme.border, backgroundColor: theme.cardBackground }]} nestedScrollEnabled>
             {US_STATES.map((state) => (
               <TouchableOpacity
                 key={state.code}
-                style={styles.dropdownItem}
+                style={[styles.dropdownItem, { borderBottomColor: theme.border }]}
                 onPress={() => {
                   setSelectedState(state);
                   setShowStateDropdown(false);
@@ -133,7 +139,8 @@ export default function SetupScreen() {
               key={cat.id}
               style={[
                 styles.categoryChip,
-                selectedTestCategory === cat.id && styles.selectedChip
+                { borderColor: theme.border, backgroundColor: theme.cardBackground },
+                selectedTestCategory === cat.id && { borderColor: '#16A34A', backgroundColor: isDark ? 'rgba(22, 163, 74, 0.15)' : '#F0FDF4' }
               ]}
               onPress={() => {
                 setSelectedTestCategory(cat.id);
@@ -146,28 +153,29 @@ export default function SetupScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
-        <ScrollView style={styles.licenseTypesList} showsVerticalScrollIndicator={false}>
+        <ThemedView style={styles.licenseTypesContainer}>
           {filteredTestTypes.map((type) => (
             <TouchableOpacity
               key={type.id}
               style={[
                 styles.licenseTypeItem,
-                selectedLicenseType?.id === type.id && styles.selectedItem
+                { backgroundColor: theme.cardBackground, borderColor: theme.border },
+                selectedLicenseType?.id === type.id && { borderColor: '#16A34A', backgroundColor: isDark ? 'rgba(22, 163, 74, 0.15)' : '#F0FDF4', borderWidth: 2 }
               ]}
               onPress={() => setSelectedLicenseType(type)}
               activeOpacity={0.7}
             >
               <ThemedText style={styles.licenseIcon}>{type.icon}</ThemedText>
               <ThemedView style={styles.licenseInfo}>
-                <ThemedText type="defaultSemiBold">{type.name}</ThemedText>
-                <ThemedText style={styles.description}>{type.description}</ThemedText>
+                <ThemedText type="defaultSemiBold" numberOfLines={1}>{type.name}</ThemedText>
+                <ThemedText style={styles.description} numberOfLines={2}>{type.description}</ThemedText>
                 {type.requiresCDL && (
-                  <ThemedText style={styles.cdlBadge}>Requires CDL</ThemedText>
+                  <ThemedText style={styles.cdlBadge}>CDL Required</ThemedText>
                 )}
               </ThemedView>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </ThemedView>
       </ThemedView>
 
       {/* Test Mode Selection */}
@@ -178,7 +186,8 @@ export default function SetupScreen() {
             key={mode.id}
             style={[
               styles.testTypeItem,
-              selectedTestMode === mode.id && styles.selectedItem
+              { backgroundColor: theme.cardBackground, borderColor: theme.border },
+              selectedTestMode === mode.id && { borderColor: '#16A34A', backgroundColor: isDark ? 'rgba(22, 163, 74, 0.15)' : '#F0FDF4', borderWidth: 2 }
             ]}
             onPress={() => {
               setSelectedTestMode(mode.id);
@@ -202,7 +211,8 @@ export default function SetupScreen() {
                 key={category.id}
                 style={[
                   styles.categoryItem,
-                  selectedCategory === category.id && styles.selectedItem
+                  { backgroundColor: theme.cardBackground, borderColor: theme.border },
+                  selectedCategory === category.id && { borderColor: '#16A34A', backgroundColor: isDark ? 'rgba(22, 163, 74, 0.15)' : '#F0FDF4', borderWidth: 2 }
                 ]}
                 onPress={() => setSelectedCategory(category.id as QuestionCategory)}
                 activeOpacity={0.7}
@@ -227,12 +237,16 @@ export default function SetupScreen() {
         </ThemedText>
       </TouchableOpacity>
       </ThemedView>
-    </ScrollView>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  scrollView: {
     flex: 1,
   },
   content: {
@@ -250,7 +264,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -271,14 +284,12 @@ const styles = StyleSheet.create({
   dropdownList: {
     maxHeight: 200,
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
     marginTop: 8,
   },
   dropdownItem: {
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -298,14 +309,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
     marginRight: 8,
     gap: 4,
   },
-  selectedChip: {
-    borderColor: '#16A34A',
-    backgroundColor: '#F0FDF4',
-  },
+
   chipIcon: {
     fontSize: 16,
   },
@@ -313,21 +320,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
+  licenseTypesContainer: {
+    backgroundColor: 'transparent',
+  },
   licenseTypesList: {
     maxHeight: 200,
   },
   licenseTypeItem: {
     flexDirection: 'row',
-    padding: 12,
+    padding: 10,
     marginBottom: 8,
     borderRadius: 8,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: 1,
     alignItems: 'center',
   },
   licenseIcon: {
-    fontSize: 24,
-    marginRight: 12,
+    fontSize: 20,
+    marginRight: 10,
+    width: 24,
   },
   licenseInfo: {
     flex: 1,
@@ -337,19 +347,18 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 10,
     borderRadius: 8,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: 1,
   },
   description: {
-    fontSize: 13,
+    fontSize: 12,
     opacity: 0.7,
-    marginTop: 4,
+    marginTop: 2,
   },
   cdlBadge: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#DC2626',
     fontWeight: '600',
-    marginTop: 4,
+    marginTop: 2,
   },
   categoryGrid: {
     flexDirection: 'row',
@@ -363,8 +372,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 8,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: 1,
   },
   categoryIcon: {
     fontSize: 24,
@@ -374,11 +382,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
   },
-  selectedItem: {
-    borderColor: '#16A34A',
-    backgroundColor: '#F0FDF4',
-    borderWidth: 2,
-  },
+
   startButton: {
     backgroundColor: '#16A34A',
     padding: 18,
@@ -393,7 +397,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   disabledButton: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#9CA3AF',
   },
   startButtonText: {
     color: 'white',

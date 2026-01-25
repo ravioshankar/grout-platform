@@ -277,8 +277,6 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         )}
         
-        <ThemedText style={styles.heroEmail}>{userEmail}</ThemedText>
-        
         <ThemedView style={styles.heroMetrics}>
           <ThemedView style={styles.heroMetricItem}>
             <Ionicons name="checkmark-circle" size={16} color="#FFF" />
@@ -528,27 +526,26 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
   loadingText: { fontSize: 16, opacity: 0.7 },
   
-  profileHero: { padding: 24, alignItems: 'center', gap: 12, marginBottom: 16, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
-  avatarContainer: { marginBottom: 8, alignItems: 'center' },
-  avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 4, borderColor: '#FFF' },
-  avatarPlaceholder: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#FFF', alignItems: 'center', justifyContent: 'center' },
-  editBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#007AFF', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#FFF' },
+  profileHero: { padding: 20, alignItems: 'center', gap: 10, marginBottom: 16, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
+  avatarContainer: { marginBottom: 6, alignItems: 'center' },
+  avatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, borderColor: '#FFF' },
+  avatarPlaceholder: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#FFF', alignItems: 'center', justifyContent: 'center' },
+  editBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#007AFF', width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#FFF' },
   heroNameContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'transparent' },
-  heroName: { fontSize: 24, fontWeight: 'bold', color: '#FFF', textAlign: 'center' },
-  heroEmail: { fontSize: 14, color: 'rgba(255,255,255,0.9)', textAlign: 'center' },
-  heroMetrics: { flexDirection: 'row', gap: 16, marginTop: 4, backgroundColor: 'transparent' },
-  heroMetricItem: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'transparent' },
-  heroMetricText: { fontSize: 12, color: '#FFF', fontWeight: '600' },
+  heroName: { fontSize: 20, fontWeight: 'bold', color: '#FFF', textAlign: 'center' },
+  heroMetrics: { flexDirection: 'row', gap: 12, marginTop: 4, backgroundColor: 'transparent' },
+  heroMetricItem: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'transparent' },
+  heroMetricText: { fontSize: 11, color: '#FFF', fontWeight: '600' },
   nameEditContainer: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'transparent' },
   nameInput: { fontSize: 20, fontWeight: '600', color: '#FFF', padding: 8, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.2)', minWidth: 200, textAlign: 'center' },
   saveButton: { padding: 8 },
   
-  card: { marginHorizontal: 16, marginTop: 16, padding: 20, borderRadius: 16, gap: 16 },
+  card: { marginHorizontal: 16, marginTop: 16, padding: 16, borderRadius: 16, gap: 12 },
   cardTitle: { marginBottom: 4 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'transparent' },
   viewAllText: { fontSize: 14, color: '#007AFF', fontWeight: '600' },
   
-  detailsCard: { marginHorizontal: 16, marginTop: 16, padding: 16, borderRadius: 16, gap: 12 },
+  detailsCard: { marginHorizontal: 16, marginTop: 16, padding: 14, borderRadius: 16, gap: 10 },
   detailsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, backgroundColor: 'transparent' },
   detailsRow: { flexDirection: 'row', gap: 12, backgroundColor: 'transparent' },
   detailItemHorizontal: { flex: 1, alignItems: 'center', gap: 8, padding: 12, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.02)' },
@@ -559,12 +556,12 @@ const styles = StyleSheet.create({
   detailLabel: { fontSize: 12, opacity: 0.6, marginBottom: 4 },
   detailValue: { fontSize: 15, fontWeight: '600' },
   
-  quickStatsCard: { marginHorizontal: 16, marginTop: 16, padding: 20, borderRadius: 16 },
-  quickStatsRow: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: 'transparent' },
-  quickStatItem: { alignItems: 'center', gap: 8, flex: 1, backgroundColor: 'transparent' },
-  quickStatIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  quickStatValue: { fontSize: 20, fontWeight: 'bold' },
-  quickStatLabel: { fontSize: 11, opacity: 0.7 },
+  quickStatsCard: { marginHorizontal: 16, marginTop: 16, padding: 16, borderRadius: 16 },
+  quickStatsRow: { flexDirection: 'row', justifyContent: 'space-around', gap: 8, backgroundColor: 'transparent' },
+  quickStatItem: { alignItems: 'center', gap: 6, flex: 1, backgroundColor: 'transparent' },
+  quickStatIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  quickStatValue: { fontSize: 18, fontWeight: 'bold' },
+  quickStatLabel: { fontSize: 10, opacity: 0.7, textAlign: 'center' },
   
   recentTestItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)', backgroundColor: 'transparent' },
   testIconBadge: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
@@ -573,10 +570,10 @@ const styles = StyleSheet.create({
   recentTestMeta: { fontSize: 12, opacity: 0.6, marginTop: 2 },
   recentTestScore: { fontSize: 18, fontWeight: 'bold' },
   
-  actionGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12, backgroundColor: 'transparent' },
-  actionButton: { width: '48%', alignItems: 'center', gap: 8, padding: 16, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.02)' },
-  actionIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  actionText: { fontSize: 13, fontWeight: '600' },
+  actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, backgroundColor: 'transparent' },
+  actionButton: { width: '48.5%', alignItems: 'center', gap: 10, padding: 14, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.02)' },
+  actionIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  actionText: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
   
   settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, backgroundColor: 'transparent' },
   settingLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'transparent' },

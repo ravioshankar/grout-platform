@@ -1,6 +1,16 @@
+import { Platform } from 'react-native';
 import { getSetting } from './database';
 
-const API_BASE_URL = 'http://127.0.0.1:8888';
+// For Android emulator: use 10.0.2.2 (special alias for host machine)
+// For iOS simulator and web: use localhost
+const getApiBaseUrl = () => {
+  if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:8888';
+  }
+  return 'http://localhost:8888';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 interface RequestConfig extends RequestInit {
   requiresAuth?: boolean;
@@ -19,9 +29,13 @@ class ApiClient {
     };
 
     if (requiresAuth) {
-      const token = await getSetting('auth_token');
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+      try {
+        const token = await getSetting('auth_token');
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.warn('Failed to get auth token:', error);
       }
     }
 
@@ -37,13 +51,15 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     
     console.log('API Request:', restConfig.method || 'GET', url);
+    console.log('Base URL:', this.baseURL);
     
     const response = await fetch(url, {
       ...restConfig,
       headers: mergedHeaders,
     }).catch(err => {
       console.error('Fetch error:', err);
-      throw new Error(`Cannot connect to server. Please ensure the API is running at ${this.baseURL}`);
+      console.error('Failed URL:', url);
+      throw new Error(`Cannot connect to server at ${this.baseURL}. Error: ${err.message}`);
     });
 
     if (!response.ok) {
@@ -59,12 +75,12 @@ class ApiClient {
       
       if (error.detail && Array.isArray(error.detail)) {
         const firstError = error.detail[0];
-        const errorMsg = firstError.msg || 'Validation error';
+        const errorMsg = String(firstError.msg || 'Validation error');
         console.log('Extracted validation error:', errorMsg);
         throw new Error(errorMsg);
       }
       
-      const errorMsg = error.message || error.detail || 'Request failed';
+      const errorMsg = String(error.message || error.detail || 'Request failed');
       console.log('Extracted error:', errorMsg);
       throw new Error(errorMsg);
     }

@@ -2,17 +2,25 @@ import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
 
 let db: SQLite.SQLiteDatabase | null = null;
+let dbQueue: Promise<any> = Promise.resolve();
+
+const queueDbOperation = <T>(operation: () => Promise<T>): Promise<T> => {
+  dbQueue = dbQueue.then(operation, operation);
+  return dbQueue;
+};
 
 export const initDatabase = async () => {
   try {
     if (db) return db;
     
+    console.log('Initializing database...');
     db = await SQLite.openDatabaseAsync('roadready.db');
     
     if (!db) {
       throw new Error('Failed to open database');
     }
 
+    console.log('Creating tables...');
     // Create all tables
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS user_profile (
@@ -72,9 +80,11 @@ export const initDatabase = async () => {
     );
     `);
 
+    console.log('Database initialized successfully');
     return db;
   } catch (error) {
     console.error('Database initialization error:', error);
+    db = null;
     throw error;
   }
 };
@@ -88,48 +98,52 @@ export const getDatabase = () => {
 };
 
 export const saveUserProfile = async (profile: { selectedState: string; selectedTestType: string; theme?: string }) => {
-  try {
-    const database = getDatabase();
-    const now = Date.now();
-    
-    // Delete existing profile first
-    await database.runAsync('DELETE FROM user_profile');
-    
-    await database.runAsync(
-      'INSERT INTO user_profile (selected_state, selected_test_type, theme, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-      [profile.selectedState, profile.selectedTestType, profile.theme || 'auto', now, now]
-    );
-  } catch (error) {
-    console.error('Error saving user profile:', error);
-    throw error;
-  }
+  return queueDbOperation(async () => {
+    try {
+      const database = getDatabase();
+      const now = Date.now();
+      
+      // Delete existing profile first
+      await database.runAsync('DELETE FROM user_profile');
+      
+      await database.runAsync(
+        'INSERT INTO user_profile (selected_state, selected_test_type, theme, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+        [profile.selectedState, profile.selectedTestType, profile.theme || 'auto', now, now]
+      );
+    } catch (error) {
+      console.error('Error saving user profile:', error);
+      throw error;
+    }
+  });
 };
 
 export const updateUserTheme = async (theme: string) => {
-  try {
-    const database = getDatabase();
-    const now = Date.now();
-    
-    // Check if profile exists
-    const profile = await database.getFirstAsync<{ id: number }>('SELECT id FROM user_profile ORDER BY id DESC LIMIT 1');
-    
-    if (profile) {
-      // Update existing profile
-      await database.runAsync(
-        'UPDATE user_profile SET theme = ?, updated_at = ? WHERE id = ?',
-        [theme, now, profile.id]
-      );
-    } else {
-      // Create new profile with default values
-      await database.runAsync(
-        'INSERT INTO user_profile (selected_state, selected_test_type, theme, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-        ['CA', 'class-c', theme, now, now]
-      );
+  return queueDbOperation(async () => {
+    try {
+      const database = getDatabase();
+      const now = Date.now();
+      
+      // Check if profile exists
+      const profile = await database.getFirstAsync<{ id: number }>('SELECT id FROM user_profile ORDER BY id DESC LIMIT 1');
+      
+      if (profile) {
+        // Update existing profile
+        await database.runAsync(
+          'UPDATE user_profile SET theme = ?, updated_at = ? WHERE id = ?',
+          [theme, now, profile.id]
+        );
+      } else {
+        // Create new profile with default values
+        await database.runAsync(
+          'INSERT INTO user_profile (selected_state, selected_test_type, theme, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+          ['CA', 'class-c', theme, now, now]
+        );
+      }
+    } catch (error) {
+      console.error('Error updating user theme:', error);
+      throw error;
     }
-  } catch (error) {
-    console.error('Error updating user theme:', error);
-    throw error;
-  }
+  });
 };
 
 export const getUserProfile = async () => {
@@ -159,35 +173,37 @@ export const getUserProfile = async () => {
 };
 
 export const saveTestResult = async (result: any) => {
-  try {
-    const database = getDatabase();
-    
-    await database.runAsync(
-      `INSERT INTO test_records (
-        id, state_code, score, total_questions, correct_answers, category,
-        license_test_type, completed_at, time_spent, test_type, questions,
-        user_answers, is_correct
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        result.id,
-        result.stateCode,
-        result.score,
-        result.totalQuestions,
-        result.correctAnswers,
-        result.category,
-        result.licenseTestType || null,
-        result.completedAt.getTime(),
-        result.timeSpent,
-        result.testType,
-        JSON.stringify(result.questions),
-        JSON.stringify(result.userAnswers),
-        JSON.stringify(result.isCorrect),
-      ]
-    );
-  } catch (error) {
-    console.error('Error saving test result:', error);
-    throw error;
-  }
+  return queueDbOperation(async () => {
+    try {
+      const database = getDatabase();
+      
+      await database.runAsync(
+        `INSERT INTO test_records (
+          id, state_code, score, total_questions, correct_answers, category,
+          license_test_type, completed_at, time_spent, test_type, questions,
+          user_answers, is_correct
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          result.id,
+          result.stateCode,
+          result.score,
+          result.totalQuestions,
+          result.correctAnswers,
+          result.category,
+          result.licenseTestType || null,
+          result.completedAt.getTime(),
+          result.timeSpent,
+          result.testType,
+          JSON.stringify(result.questions),
+          JSON.stringify(result.userAnswers),
+          JSON.stringify(result.isCorrect),
+        ]
+      );
+    } catch (error) {
+      console.error('Error saving test result:', error);
+      throw error;
+    }
+  });
 };
 
 export const getTestResults = async (stateCode?: string) => {
@@ -268,42 +284,59 @@ export const removeBookmark = async (questionId: string) => {
 };
 
 export const saveSetting = async (key: string, value: string) => {
-  try {
-    const database = getDatabase();
-    const now = Date.now();
-    
-    await database.runAsync(
-      'INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, ?)',
-      [key, value, now]
-    );
-  } catch (error) {
-    console.error('Error saving setting:', error);
-    throw error;
-  }
+  return queueDbOperation(async () => {
+    try {
+      if (!db) {
+        console.log('Database not initialized, initializing now...');
+        await initDatabase();
+      }
+      const database = getDatabase();
+      const now = Date.now();
+      
+      await database.runAsync(
+        'INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, ?)',
+        [key, value, now]
+      );
+    } catch (error) {
+      console.error('Error saving setting:', error);
+      // Don't throw, just log - allow app to continue
+    }
+  });
 };
 
 export const getSetting = async (key: string): Promise<string | null> => {
-  try {
-    const database = getDatabase();
-    const result = await database.getFirstAsync<{ value: string }>(
-      'SELECT value FROM settings WHERE key = ?',
-      [key]
-    );
-    return result?.value || null;
-  } catch (error) {
-    console.error('Error getting setting:', error);
-    return null;
-  }
+  return queueDbOperation(async () => {
+    try {
+      if (!db) {
+        console.warn('Database not initialized, returning null for key:', key);
+        return null;
+      }
+      const database = getDatabase();
+      const result = await database.getFirstAsync<{ value: string }>(
+        'SELECT value FROM settings WHERE key = ?',
+        [key]
+      );
+      return result?.value || null;
+    } catch (error) {
+      console.error('Error getting setting:', error);
+      return null;
+    }
+  });
 };
 
 export const deleteSetting = async (key: string): Promise<void> => {
-  try {
-    const database = getDatabase();
-    await database.runAsync('DELETE FROM settings WHERE key = ?', [key]);
-  } catch (error) {
-    console.error('Error deleting setting:', error);
-    throw error;
-  }
+  return queueDbOperation(async () => {
+    try {
+      if (!db) {
+        console.warn('Database not initialized, cannot delete setting:', key);
+        return;
+      }
+      const database = getDatabase();
+      await database.runAsync('DELETE FROM settings WHERE key = ?', [key]);
+    } catch (error) {
+      console.error('Error deleting setting:', error);
+    }
+  });
 };
 
 export const getAllSettings = async (): Promise<Record<string, string>> => {

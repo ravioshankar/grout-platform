@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, TextInput, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, TouchableOpacity, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ThemedAlert } from '@/components/themed-alert';
 import { AppHeader } from '@/components/app-header';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
 import { getSetting } from '@/utils/database';
+import { useThemedAlert } from '@/hooks/use-themed-alert';
 import { US_STATES } from '@/constants/states';
 import { TEST_TYPES } from '@/constants/test-types';
 import { apiClient } from '@/utils/api-client';
@@ -15,6 +17,7 @@ import { apiClient } from '@/utils/api-client';
 export default function EditProfileScreen() {
   const { isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
+  const { alertConfig, showAlert, hideAlert } = useThemedAlert();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [firstName, setFirstName] = useState('');
@@ -37,7 +40,7 @@ export default function EditProfileScreen() {
       setTestType(data.test_type || '');
     } catch (error) {
       console.error('Failed to load profile:', error);
-      Alert.alert('Error', 'Failed to load profile. Please try again.');
+      showAlert('Error', 'Failed to load profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -45,7 +48,7 @@ export default function EditProfileScreen() {
 
   const handleSave = async () => {
     if (!firstName.trim()) {
-      Alert.alert('Error', 'First name is required');
+      showAlert('Error', 'First name is required');
       return;
     }
 
@@ -57,11 +60,12 @@ export default function EditProfileScreen() {
         state: state || null,
         test_type: testType || null,
       });
-      Alert.alert('Success', 'Profile updated successfully');
-      router.back();
+      showAlert('Success', 'Profile updated successfully', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
     } catch (error: any) {
       console.error('Failed to save profile:', error);
-      Alert.alert('Error', error.message || 'Failed to update profile');
+      showAlert('Error', error.message || 'Failed to update profile');
     } finally {
       setSaving(false);
     }
@@ -197,6 +201,16 @@ export default function EditProfileScreen() {
         </TouchableOpacity>
         </ThemedView>
       </ScrollView>
+      
+      {alertConfig && (
+        <ThemedAlert
+          visible={true}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          buttons={alertConfig.buttons}
+          onDismiss={hideAlert}
+        />
+      )}
     </ThemedView>
   );
 }

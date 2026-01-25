@@ -1,16 +1,19 @@
 import { useState } from 'react';
-import { StyleSheet, TouchableOpacity, TextInput, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, TouchableOpacity, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ThemedAlert } from '@/components/themed-alert';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
 import { apiClient } from '@/utils/api-client';
+import { useThemedAlert } from '@/hooks/use-themed-alert';
 
 export default function ChangePasswordScreen() {
   const { isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
+  const { alertConfig, showAlert, hideAlert } = useThemedAlert();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -37,17 +40,17 @@ export default function ChangePasswordScreen() {
 
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert('Error', 'All fields are required');
+      showAlert('Error', 'All fields are required');
       return;
     }
 
     if (newPassword.length < 8) {
-      Alert.alert('Error', 'New password must be at least 8 characters');
+      showAlert('Error', 'New password must be at least 8 characters');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'New passwords do not match');
+      showAlert('Error', 'New passwords do not match');
       return;
     }
 
@@ -57,12 +60,12 @@ export default function ChangePasswordScreen() {
         current_password: currentPassword,
         new_password: newPassword,
       });
-      Alert.alert('Success', 'Password changed successfully', [
+      showAlert('Success', 'Password changed successfully', [
         { text: 'OK', onPress: () => router.back() }
       ]);
     } catch (error: any) {
       console.error('Failed to change password:', error);
-      Alert.alert('Error', error.message || 'Failed to change password');
+      showAlert('Error', error.message || 'Failed to change password');
     } finally {
       setLoading(false);
     }
@@ -178,6 +181,16 @@ export default function ChangePasswordScreen() {
         </TouchableOpacity>
         </ThemedView>
       </ScrollView>
+      
+      {alertConfig && (
+        <ThemedAlert
+          visible={true}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          buttons={alertConfig.buttons}
+          onDismiss={hideAlert}
+        />
+      )}
     </ThemedView>
   );
 }

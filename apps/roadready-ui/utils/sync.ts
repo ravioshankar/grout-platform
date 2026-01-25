@@ -24,28 +24,33 @@ export async function syncTestRecords(): Promise<{ uploaded: number; downloaded:
     // Download from backend first
     try {
       const backendRecords = await apiClient.get<any[]>('/api/v1/test-records/');
-      const lastSyncTime = await getSetting('last_sync_time');
-      const lastSync = lastSyncTime ? parseInt(lastSyncTime) : 0;
+      
+      if (!Array.isArray(backendRecords)) {
+        result.errors.push('Invalid response format from server');
+      } else {
+        const lastSyncTime = await getSetting('last_sync_time');
+        const lastSync = lastSyncTime ? parseInt(lastSyncTime) : 0;
 
-      for (const record of backendRecords) {
-        const recordTime = new Date(record.completed_at).getTime();
-        if (recordTime > lastSync) {
-          const testResult: TestResult = {
-            id: `backend_${record.id}`,
-            stateCode: record.state_code,
-            score: record.score,
-            totalQuestions: record.total_questions,
-            correctAnswers: record.correct_answers,
-            category: record.category,
-            completedAt: new Date(record.completed_at),
-            timeSpent: record.time_spent,
-            questions: JSON.parse(record.questions),
-            userAnswers: JSON.parse(record.user_answers),
-            isCorrect: JSON.parse(record.is_correct),
-            testType: record.test_type as 'full-test' | 'practice',
-          };
-          await saveTestResult(testResult);
-          result.downloaded++;
+        for (const record of backendRecords) {
+          const recordTime = new Date(record.completed_at).getTime();
+          if (recordTime > lastSync) {
+            const testResult: TestResult = {
+              id: `backend_${record.id}`,
+              stateCode: record.state_code,
+              score: record.score,
+              totalQuestions: record.total_questions,
+              correctAnswers: record.correct_answers,
+              category: record.category,
+              completedAt: new Date(record.completed_at),
+              timeSpent: record.time_spent,
+              questions: JSON.parse(record.questions),
+              userAnswers: JSON.parse(record.user_answers),
+              isCorrect: JSON.parse(record.is_correct),
+              testType: record.test_type as 'full-test' | 'practice',
+            };
+            await saveTestResult(testResult);
+            result.downloaded++;
+          }
         }
       }
     } catch (error: any) {
@@ -102,7 +107,11 @@ export async function startAutoSync(intervalMinutes: number = 5) {
   setInterval(async () => {
     const result = await syncTestRecords();
     if (result.errors.length > 0) {
-      console.error('Auto-sync errors:', result.errors);
+      // Silently ignore auth errors during auto-sync
+      const nonAuthErrors = result.errors.filter(e => !e.includes('Session expired') && !e.includes('Not authenticated'));
+      if (nonAuthErrors.length > 0) {
+        console.warn('Auto-sync errors:', nonAuthErrors);
+      }
     }
   }, intervalMinutes * 60 * 1000);
 }

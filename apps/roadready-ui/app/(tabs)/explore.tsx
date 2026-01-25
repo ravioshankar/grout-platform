@@ -1,18 +1,21 @@
 import { useState } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, Dimensions, Alert } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ThemedAlert } from '@/components/themed-alert';
 import { AppHeader } from '@/components/app-header';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
+import { useThemedAlert } from '@/hooks/use-themed-alert';
 
 const { width } = Dimensions.get('window');
 
 export default function ExploreScreen() {
   const { isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
+  const { alertConfig, showAlert, hideAlert } = useThemedAlert();
   const [selectedTip, setSelectedTip] = useState<number | null>(null);
 
   const features = [
@@ -22,7 +25,7 @@ export default function ExploreScreen() {
       description: 'Experience real DMV office scenarios',
       icon: 'car-sport',
       color: '#FF6B35',
-      action: () => Alert.alert('Coming Soon', 'DMV Simulator will be available in the next update!')
+      action: () => showAlert('Coming Soon', 'DMV Simulator will be available in the next update!')
     },
     {
       id: 'ai-tutor',
@@ -30,7 +33,7 @@ export default function ExploreScreen() {
       description: 'Get personalized study recommendations',
       icon: 'chatbubble-ellipses',
       color: '#4CAF50',
-      action: () => Alert.alert('AI Tutor', 'Your AI study buddy analyzes your performance and suggests focus areas!')
+      action: () => showAlert('AI Tutor', 'Your AI study buddy analyzes your performance and suggests focus areas!')
     },
     {
       id: 'challenges',
@@ -38,7 +41,7 @@ export default function ExploreScreen() {
       description: 'Complete daily driving challenges',
       icon: 'trophy',
       color: '#FF9800',
-      action: () => Alert.alert('Daily Challenge', 'Today: Master parking rules in 5 questions!')
+      action: () => showAlert('Daily Challenge', 'Today: Master parking rules in 5 questions!')
     },
     {
       id: 'community',
@@ -46,7 +49,7 @@ export default function ExploreScreen() {
       description: 'Join local study communities',
       icon: 'people',
       color: '#9C27B0',
-      action: () => Alert.alert('Study Groups', 'Connect with 1,247 learners in your area!')
+      action: () => showAlert('Study Groups', 'Connect with 1,247 learners in your area!')
     }
   ];
 
@@ -204,6 +207,16 @@ export default function ExploreScreen() {
           </TouchableOpacity>
         </ThemedView>
       </ThemedView>
+      
+      {alertConfig && (
+        <ThemedAlert
+          visible={true}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          buttons={alertConfig.buttons}
+          onDismiss={hideAlert}
+        />
+      )}
     </ScrollView>
   );
 }

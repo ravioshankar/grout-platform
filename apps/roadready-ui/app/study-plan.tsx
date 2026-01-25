@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ThemedAlert } from '@/components/themed-alert';
 import { AppHeader } from '@/components/app-header';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
+import { useThemedAlert } from '@/hooks/use-themed-alert';
 
 interface StudyPlanDay {
   day: number;
@@ -25,6 +27,7 @@ const STUDY_PLAN_KEY = 'dmv_study_plan';
 export default function StudyPlanScreen() {
   const { isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
+  const { alertConfig, showAlert, hideAlert } = useThemedAlert();
   const [studyPlan, setStudyPlan] = useState<StudyPlanDay[]>([]);
   const [currentDay, setCurrentDay] = useState(1);
   const [overallProgress, setOverallProgress] = useState(0);
@@ -219,7 +222,7 @@ export default function StudyPlanScreen() {
   };
 
   const resetStudyPlan = () => {
-    Alert.alert(
+    showAlert(
       'Reset Study Plan',
       'This will reset your entire study plan progress. Are you sure?',
       [
@@ -270,22 +273,23 @@ export default function StudyPlanScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ThemedView style={styles.container}>
       <AppHeader title="Study Plan" showLogo={false} />
+      <ScrollView style={styles.scrollView}>
 
 
       {/* Progress Overview */}
-      <ThemedView style={[styles.progressSection, { backgroundColor: Colors[currentScheme].cardBackground }]}>
+      <ThemedView style={[styles.progressSection, { backgroundColor: Colors[currentScheme].cardBackground, borderColor: Colors[currentScheme].border }]}>
         <ThemedView style={styles.progressHeader}>
           <ThemedText type="subtitle">Overall Progress</ThemedText>
           <TouchableOpacity onPress={resetStudyPlan} style={styles.resetButton}>
-            <Ionicons name="refresh" size={16} color="#666" />
+            <Ionicons name="refresh" size={16} color={Colors[currentScheme].icon} />
             <ThemedText style={styles.resetText}>Reset</ThemedText>
           </TouchableOpacity>
         </ThemedView>
         
         <ThemedView style={styles.progressBarContainer}>
-          <ThemedView style={styles.progressBar}>
+          <ThemedView style={[styles.progressBar, { backgroundColor: isDark ? '#374151' : '#e0e0e0' }]}>
             <ThemedView 
               style={[styles.progressFill, { width: `${overallProgress}%` }]} 
             />
@@ -316,9 +320,9 @@ export default function StudyPlanScreen() {
         {studyPlan.map((day, dayIndex) => (
           <ThemedView key={day.day} style={[
             styles.dayCard,
-            { backgroundColor: Colors[currentScheme].cardBackground },
-            day.completed && styles.completedDayCard,
-            day.day === currentDay && styles.currentDayCard
+            { backgroundColor: Colors[currentScheme].cardBackground, borderColor: Colors[currentScheme].border },
+            day.completed && { borderColor: '#4CAF50' },
+            day.day === currentDay && { borderColor: '#FF9800' }
           ]}>
             <ThemedView style={styles.dayHeader}>
               <ThemedView style={styles.dayInfo}>
@@ -334,7 +338,7 @@ export default function StudyPlanScreen() {
                 </ThemedView>
                 <ThemedView style={styles.dayMeta}>
                   <ThemedText style={styles.dayTime}>
-                    <Ionicons name="time" size={12} color="#666" /> {day.estimatedTime} min
+                    <Ionicons name="time" size={12} color={Colors[currentScheme].icon} /> {day.estimatedTime} min
                   </ThemedText>
                   <ThemedText style={[styles.dayCategory, { color: getCategoryColor(day.category) }]}>
                     {day.category.replace('-', ' ').toUpperCase()}
@@ -346,7 +350,7 @@ export default function StudyPlanScreen() {
                 {day.completed ? (
                   <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
                 ) : (
-                  <ThemedView style={styles.progressCircle}>
+                  <ThemedView style={[styles.progressCircle, { backgroundColor: isDark ? '#374151' : '#f0f0f0' }]}>
                     <ThemedText style={styles.progressPercent}>{day.progress}%</ThemedText>
                   </ThemedView>
                 )}
@@ -367,7 +371,7 @@ export default function StudyPlanScreen() {
                     <Ionicons 
                       name={isCompleted ? "checkmark-circle" : "ellipse-outline"} 
                       size={16} 
-                      color={isCompleted ? "#4CAF50" : "#ccc"} 
+                      color={isCompleted ? "#4CAF50" : Colors[currentScheme].icon} 
                     />
                     <ThemedText style={[
                       styles.taskText,
@@ -392,7 +396,18 @@ export default function StudyPlanScreen() {
           </ThemedView>
         ))}
       </ThemedView>
-    </ScrollView>
+      </ScrollView>
+      
+      {alertConfig && (
+        <ThemedAlert
+          visible={true}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          buttons={alertConfig.buttons}
+          onDismiss={hideAlert}
+        />
+      )}
+    </ThemedView>
   );
 }
 
@@ -400,10 +415,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
   progressSection: {
     padding: 20,
     margin: 16,
     borderRadius: 12,
+    borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -415,6 +434,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+    backgroundColor: 'transparent',
   },
   resetButton: {
     flexDirection: 'row',
@@ -430,11 +450,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     marginBottom: 20,
+    backgroundColor: 'transparent',
   },
   progressBar: {
     flex: 1,
     height: 8,
-    backgroundColor: '#e0e0e0',
     borderRadius: 4,
   },
   progressFill: {
@@ -450,9 +470,11 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    backgroundColor: 'transparent',
   },
   statItem: {
     alignItems: 'center',
+    backgroundColor: 'transparent',
   },
   statNumber: {
     fontSize: 24,
@@ -465,6 +487,7 @@ const styles = StyleSheet.create({
   },
   planSection: {
     padding: 16,
+    backgroundColor: 'transparent',
   },
   sectionTitle: {
     marginBottom: 16,
@@ -474,33 +497,29 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: 'transparent',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  completedDayCard: {
-    borderColor: '#4CAF50',
-  },
-  currentDayCard: {
-    borderColor: '#FF9800',
-  },
   dayHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 12,
+    backgroundColor: 'transparent',
   },
   dayInfo: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   dayTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginBottom: 8,
+    backgroundColor: 'transparent',
   },
   dayTitle: {
     fontSize: 16,
@@ -510,6 +529,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    backgroundColor: 'transparent',
   },
   dayTime: {
     fontSize: 12,
@@ -521,12 +541,12 @@ const styles = StyleSheet.create({
   },
   dayStatus: {
     alignItems: 'center',
+    backgroundColor: 'transparent',
   },
   progressCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -537,6 +557,7 @@ const styles = StyleSheet.create({
   },
   tasksContainer: {
     gap: 8,
+    backgroundColor: 'transparent',
   },
   taskItem: {
     flexDirection: 'row',

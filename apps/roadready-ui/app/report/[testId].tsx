@@ -57,8 +57,9 @@ export default function ReportScreen() {
   const passed = testResult.score >= 70;
 
   return (
-    <ScrollView style={styles.container}>
+    <ThemedView style={styles.container}>
       <AppHeader title="Test Report" showLogo={false} />
+      <ScrollView style={styles.scrollView}>
       <ThemedView style={styles.content}>
 
         {/* Score Card */}
@@ -171,36 +172,38 @@ export default function ReportScreen() {
           </ThemedView>
         ))}
       </ThemedView>
-    </ScrollView>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  scrollView: { flex: 1 },
   content: { padding: 16, gap: 16, backgroundColor: 'transparent' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16, backgroundColor: 'transparent' },
   card: { padding: 20, borderRadius: 12, gap: 16 },
-  scoreCard: { alignItems: 'center', padding: 32, borderRadius: 16, gap: 12 },
-  scoreText: { fontSize: 56, fontWeight: 'bold', color: '#FFF' },
-  statusText: { fontSize: 24, fontWeight: 'bold', color: '#FFF', letterSpacing: 2 },
-  scoreSubtext: { fontSize: 16, color: '#FFF', opacity: 0.9 },
-  statsGrid: { flexDirection: 'row', gap: 16, backgroundColor: 'transparent' },
+  scoreCard: { alignItems: 'center', padding: 32, borderRadius: 16, gap: 8 },
+  scoreText: { fontSize: 48, fontWeight: 'bold', color: '#FFFFFF', lineHeight: 56 },
+  statusText: { fontSize: 20, fontWeight: 'bold', color: '#FFFFFF', letterSpacing: 2 },
+  scoreSubtext: { fontSize: 15, color: '#FFFFFF', opacity: 0.95 },
+  statsGrid: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: 'transparent' },
   statItem: { flex: 1, alignItems: 'center', gap: 8, backgroundColor: 'transparent' },
   statValue: { fontSize: 24, fontWeight: 'bold' },
   statLabel: { fontSize: 12, opacity: 0.7 },
-  detailRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'transparent' },
-  detailLabel: { fontSize: 14, opacity: 0.7, minWidth: 80 },
-  detailValue: { fontSize: 14, fontWeight: '600', flex: 1 },
-  questionCard: { padding: 20, borderRadius: 12, gap: 16 },
+  detailRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4, backgroundColor: 'transparent' },
+  detailLabel: { fontSize: 14, opacity: 0.7, flex: 1 },
+  detailValue: { fontSize: 14, fontWeight: '600', flex: 2 },
+  questionCard: { padding: 16, borderRadius: 12, gap: 12, marginBottom: 8 },
   questionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'transparent' },
   questionNumberBadge: { backgroundColor: '#007AFF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  questionNumberText: { color: '#FFF', fontSize: 14, fontWeight: 'bold' },
-  questionText: { fontSize: 16, lineHeight: 24 },
+  questionNumberText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
+  questionText: { fontSize: 15, lineHeight: 22, marginVertical: 4 },
   answerSection: { gap: 12, backgroundColor: 'transparent' },
-  answerBox: { padding: 16, borderRadius: 8, gap: 4 },
-  answerLabel: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  answerText: { fontSize: 15, fontWeight: '500', lineHeight: 22 },
-  explanationBox: { flexDirection: 'row', gap: 8, padding: 12, borderRadius: 8, backgroundColor: 'transparent' },
-  explanationText: { flex: 1, fontSize: 14, lineHeight: 20, opacity: 0.8 },
+  answerBox: { padding: 12, borderRadius: 8, gap: 4 },
+  answerLabel: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  answerText: { fontSize: 14, fontWeight: '500', lineHeight: 20 },
+  explanationBox: { flexDirection: 'row', gap: 8, padding: 12, borderRadius: 8, alignItems: 'flex-start' },
+  explanationText: { flex: 1, fontSize: 13, lineHeight: 19, opacity: 0.8 },
   emptyText: { fontSize: 18, fontWeight: '600', opacity: 0.7 },
 });

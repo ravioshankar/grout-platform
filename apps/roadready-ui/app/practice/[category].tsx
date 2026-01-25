@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ThemedAlert } from '@/components/themed-alert';
 import { AppHeader } from '@/components/app-header';
 import { getQuestionsByCategory } from '@/constants/questions';
 import { Question, QuestionCategory, TestResult } from '@/constants/types';
@@ -11,10 +12,12 @@ import { updateStudyProgress, updateStudyStreak } from '@/utils/study-progress';
 import { updateDailyGoalProgress } from '@/components/daily-goal';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
+import { useThemedAlert } from '@/hooks/use-themed-alert';
 
 export default function PracticeScreen() {
   const { isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
+  const { alertConfig, showAlert, hideAlert } = useThemedAlert();
   const { category } = useLocalSearchParams<{ category: string }>();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   // Default to California for practice
@@ -109,7 +112,7 @@ export default function PracticeScreen() {
         console.error('Error saving practice results:', error);
       }
       
-      Alert.alert(
+      showAlert(
         'Practice Complete!',
         `You scored ${finalScore}/${questions.length}`,
         [
@@ -217,6 +220,16 @@ export default function PracticeScreen() {
           </ThemedText>
         </TouchableOpacity>
       </ThemedView>
+      
+      {alertConfig && (
+        <ThemedAlert
+          visible={true}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          buttons={alertConfig.buttons}
+          onDismiss={hideAlert}
+        />
+      )}
     </ThemedView>
   );
 }

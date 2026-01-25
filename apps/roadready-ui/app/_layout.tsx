@@ -1,10 +1,12 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
 import { ThemeProvider as AppThemeProvider } from '@/contexts/theme-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { initDatabase } from '@/utils/database';
 
 const headerStyle = {
   headerStyle: {
@@ -31,6 +33,18 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [dbReady, setDbReady] = useState(false);
+
+  useEffect(() => {
+    initDatabase()
+      .then(() => setDbReady(true))
+      .catch(err => {
+        console.error('Failed to init database:', err);
+        setDbReady(true); // Continue anyway
+      });
+  }, []);
+
+  if (!dbReady) return null;
 
   return (
     <AppThemeProvider>

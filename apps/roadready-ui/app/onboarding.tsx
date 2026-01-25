@@ -112,14 +112,14 @@ export default function OnboardingScreen() {
         {/* Test Category Selection */}
         <ThemedView style={styles.section}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>Select Test Category</ThemedText>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
+          <ThemedView style={styles.categoryGrid}>
             {TEST_CATEGORIES.map((cat) => (
               <TouchableOpacity
                 key={cat.id}
                 style={[
-                  styles.categoryChip,
-                  { backgroundColor: Colors[currentScheme].cardBackground },
-                  selectedCategory === cat.id && styles.selectedChip
+                  styles.categoryCard,
+                  { backgroundColor: Colors[currentScheme].cardBackground, borderColor: Colors[currentScheme].border },
+                  selectedCategory === cat.id && { borderColor: '#16A34A', backgroundColor: isDark ? 'rgba(22, 163, 74, 0.15)' : '#F0FDF4' }
                 ]}
                 onPress={() => {
                   setSelectedCategory(cat.id);
@@ -127,11 +127,11 @@ export default function OnboardingScreen() {
                 }}
                 activeOpacity={0.7}
               >
-                <ThemedText style={styles.chipIcon}>{cat.icon}</ThemedText>
-                <ThemedText style={styles.chipText}>{cat.name}</ThemedText>
+                <ThemedText style={styles.categoryCardIcon}>{cat.icon}</ThemedText>
+                <ThemedText style={styles.categoryCardText}>{cat.name}</ThemedText>
               </TouchableOpacity>
             ))}
-          </ScrollView>
+          </ThemedView>
         </ThemedView>
 
         {/* Test Type Selection */}
@@ -256,29 +256,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.7,
   },
-  categoryScroll: {
-    flexGrow: 0,
-  },
-  categoryChip: {
+  categoryGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
+    flexWrap: 'wrap',
+    gap: 12,
+    backgroundColor: 'transparent',
+  },
+  categoryCard: {
+    width: '48%',
+    padding: 16,
+    borderRadius: 12,
     borderWidth: 2,
-    borderColor: 'transparent',
-    marginRight: 10,
-    gap: 6,
+    alignItems: 'center',
+    gap: 8,
   },
-  selectedChip: {
-    borderColor: '#16A34A',
+  categoryCardIcon: {
+    fontSize: 32,
   },
-  chipIcon: {
-    fontSize: 18,
-  },
-  chipText: {
-    fontSize: 14,
+  categoryCardText: {
+    fontSize: 13,
     fontWeight: '600',
+    textAlign: 'center',
   },
   testTypeCard: {
     flexDirection: 'row',
