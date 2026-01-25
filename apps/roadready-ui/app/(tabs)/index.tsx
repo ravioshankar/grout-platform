@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
 import { initDatabase, runMigrations } from '@/utils/database';
-import { apiClient } from '@/utils/api-client';
+import { SetupPromptCard } from '@/components/setup-prompt-card';
 
 export default function HomeScreen() {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -24,6 +24,7 @@ export default function HomeScreen() {
   const [dbInitialized, setDbInitialized] = useState(false);
   const [emailVerified, setEmailVerified] = useState(true);
   const [streakData, setStreakData] = useState({ currentStreak: 0, longestStreak: 0, totalXP: 0, level: 1 });
+  const [needsSetup, setNeedsSetup] = useState(false);
   const { isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
 
@@ -54,6 +55,7 @@ export default function HomeScreen() {
           try {
             const userData = await apiClient.get<any>('/api/v1/auth/me');
             setEmailVerified(userData.email_verified || false);
+            setNeedsSetup(!userData.state || !userData.test_type);
             
             const gamificationData = await apiClient.get<any>('/api/v1/gamification/stats');
             setStreakData(gamificationData);
@@ -122,6 +124,9 @@ export default function HomeScreen() {
     >
       <AppHeader title="Home" />
       <EmailVerificationBanner emailVerified={emailVerified} />
+
+      {/* Setup Prompt */}
+      {needsSetup && <SetupPromptCard />}
 
       {/* Streak Card */}
       <StreakCard 

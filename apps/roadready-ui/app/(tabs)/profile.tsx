@@ -536,6 +536,17 @@ export default function ProfileScreen() {
           
           <TouchableOpacity 
             style={styles.actionButton}
+            onPress={() => router.push('/marketplace/my-listings' as any)}
+            activeOpacity={0.7}
+          >
+            <ThemedView style={[styles.actionIcon, { backgroundColor: '#E8F5E9' }]}>
+              <Ionicons name="storefront" size={24} color="#16A34A" />
+            </ThemedView>
+            <ThemedText style={styles.actionText}>My Listings</ThemedText>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.actionButton}
             onPress={() => router.push('/profile/edit-profile')}
             activeOpacity={0.7}
           >

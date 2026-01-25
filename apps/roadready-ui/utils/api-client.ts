@@ -88,8 +88,18 @@ class ApiClient {
     return response.json();
   }
 
-  async get<T>(endpoint: string, requiresAuth: boolean = true): Promise<T> {
-    return this.request<T>(endpoint, { method: 'GET', requiresAuth });
+  async get<T>(endpoint: string, params?: Record<string, any>, requiresAuth: boolean = true): Promise<T> {
+    let url = endpoint;
+    if (params) {
+      const queryString = Object.entries(params)
+        .filter(([_, value]) => value !== undefined && value !== null)
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+        .join('&');
+      if (queryString) {
+        url = `${endpoint}?${queryString}`;
+      }
+    }
+    return this.request<T>(url, { method: 'GET', requiresAuth });
   }
 
   async post<T>(endpoint: string, data?: any, requiresAuth: boolean = true): Promise<T> {

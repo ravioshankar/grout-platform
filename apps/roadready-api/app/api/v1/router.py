@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
     health, tests, users, auth, test_records, 
-    onboarding_profiles, email_verification, statistics, sessions, gamification
+    onboarding_profiles, email_verification, statistics, sessions, gamification, marketplace
 )
 
 api_router = APIRouter()
@@ -16,3 +16,4 @@ api_router.include_router(onboarding_profiles.router, prefix="/onboarding-profil
 api_router.include_router(statistics.router, prefix="/statistics", tags=["statistics"])
 api_router.include_router(sessions.router, prefix="/sessions", tags=["sessions"])
 api_router.include_router(gamification.router, prefix="/gamification", tags=["gamification"])
+api_router.include_router(marketplace.router, prefix="/marketplace", tags=["marketplace"])

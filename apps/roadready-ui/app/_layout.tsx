@@ -53,6 +53,7 @@ export default function RootLayout() {
           <Stack.Screen name="splash" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="signup" options={{ headerShown: false }} />
+          <Stack.Screen name="welcome-tour" options={{ headerShown: false }} />
           <Stack.Screen name="profile-selection" options={{ headerShown: false }} />
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -69,6 +70,12 @@ export default function RootLayout() {
           <Stack.Screen name="profile/sessions" options={{ ...headerStyle, title: 'Active Sessions' }} />
           <Stack.Screen name="profile/statistics" options={{ ...headerStyle, title: 'Statistics' }} />
           <Stack.Screen name="profile/achievements" options={{ ...headerStyle, title: 'Achievements' }} />
+          <Stack.Screen name="marketplace/partner-store" options={{ headerShown: false }} />
+          <Stack.Screen name="marketplace/partner-product/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="marketplace/community" options={{ headerShown: false }} />
+          <Stack.Screen name="marketplace/community-listing/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="marketplace/create-listing" options={{ headerShown: false }} />
+          <Stack.Screen name="marketplace/my-listings" options={{ headerShown: false }} />
 
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
