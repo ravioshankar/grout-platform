@@ -514,6 +514,17 @@ export default function ProfileScreen() {
         <ThemedView style={styles.actionGrid}>
           <TouchableOpacity 
             style={styles.actionButton}
+            onPress={() => router.push('/profile/achievements')}
+            activeOpacity={0.7}
+          >
+            <ThemedView style={[styles.actionIcon, { backgroundColor: '#FFF3E0' }]}>
+              <Ionicons name="trophy" size={24} color="#FF9500" />
+            </ThemedView>
+            <ThemedText style={styles.actionText}>Achievements</ThemedText>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.actionButton}
             onPress={() => router.push('/profile/statistics')}
             activeOpacity={0.7}
           >

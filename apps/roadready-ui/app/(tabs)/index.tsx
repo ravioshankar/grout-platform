@@ -7,6 +7,7 @@ import { AppHeader } from '@/components/app-header';
 import { StudyReminder } from '@/components/study-reminder';
 import { DailyGoal } from '@/components/daily-goal';
 import { EmailVerificationBanner } from '@/components/email-verification-banner';
+import { StreakCard } from '@/components/streak-card';
 import { getTestResults } from '@/utils/storage';
 import { getUserProfile, getSetting } from '@/utils/database';
 import { TestResult } from '@/constants/types';
@@ -22,6 +23,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [dbInitialized, setDbInitialized] = useState(false);
   const [emailVerified, setEmailVerified] = useState(true);
+  const [streakData, setStreakData] = useState({ currentStreak: 0, longestStreak: 0, totalXP: 0, level: 1 });
   const { isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
 
@@ -52,6 +54,11 @@ export default function HomeScreen() {
           try {
             const userData = await apiClient.get<any>('/api/v1/auth/me');
             setEmailVerified(userData.email_verified || false);
+            
+            const gamificationData = await apiClient.get<any>('/api/v1/gamification/stats');
+            setStreakData(gamificationData);
+            
+            await apiClient.post('/api/v1/gamification/update-streak', {});
           } catch (error) {
             console.error('Failed to load user data:', error);
           }
@@ -115,6 +122,14 @@ export default function HomeScreen() {
     >
       <AppHeader title="Home" />
       <EmailVerificationBanner emailVerified={emailVerified} />
+
+      {/* Streak Card */}
+      <StreakCard 
+        currentStreak={streakData.currentStreak}
+        longestStreak={streakData.longestStreak}
+        totalXP={streakData.totalXP}
+        level={streakData.level}
+      />
 
       {/* Study Reminder */}
       <StudyReminder onStartStudy={() => router.push('/study-plan')} />
