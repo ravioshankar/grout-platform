@@ -91,6 +91,18 @@ export default function TestScreen() {
   const finishTest = async () => {
     const endTime = Date.now();
     const timeSpent = Math.floor((endTime - startTime) / 1000);
+
+    try {
+      const { recordWrongAnswer } = await import('@/utils/database');
+      for (let i = 0; i < questions.length; i++) {
+        const ua = userAnswers[i];
+        if (ua !== null && ua !== undefined && ua !== questions[i].correctAnswer) {
+          await recordWrongAnswer(questions[i]);
+        }
+      }
+    } catch (e) {
+      console.warn('recordWrongAnswer', e);
+    }
     
     const result: TestResult = {
       id: `test_${Date.now()}`,

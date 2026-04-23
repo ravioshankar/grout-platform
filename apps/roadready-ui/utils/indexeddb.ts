@@ -1,5 +1,5 @@
 const DB_NAME = 'roadready_db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let db: IDBDatabase | null = null;
 
@@ -42,6 +42,9 @@ export const initIndexedDB = (): Promise<IDBDatabase> => {
         }
         if (!database.objectStoreNames.contains('settings')) {
           database.createObjectStore('settings', { keyPath: 'key' });
+        }
+        if (!database.objectStoreNames.contains('wrong_answers')) {
+          database.createObjectStore('wrong_answers', { keyPath: 'id' });
         }
       };
     } catch (error) {

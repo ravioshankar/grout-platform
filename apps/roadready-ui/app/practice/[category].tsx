@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
@@ -6,7 +6,7 @@ import { ThemedView } from '@/components/themed-view';
 import { ThemedAlert } from '@/components/themed-alert';
 import { AppHeader } from '@/components/app-header';
 import { getQuestionsByCategory } from '@/constants/questions';
-import { Question, QuestionCategory, TestResult } from '@/constants/types';
+import { QuestionCategory, TestResult } from '@/constants/types';
 import { saveTestResult } from '@/utils/storage';
 import { updateStudyProgress, updateStudyStreak } from '@/utils/study-progress';
 import { updateDailyGoalProgress } from '@/components/daily-goal';
@@ -42,6 +42,10 @@ export default function PracticeScreen() {
     const correct = answerIndex === questions[currentQuestion].correctAnswer;
     if (correct) {
       setScore(score + 1);
+    } else {
+      import('@/utils/database')
+        .then(({ recordWrongAnswer }) => recordWrongAnswer(questions[currentQuestion]))
+        .catch(() => {});
     }
     
     const newUserAnswers = [...userAnswers];

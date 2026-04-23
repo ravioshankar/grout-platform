@@ -157,3 +157,23 @@ export const getRandomQuestions = (stateCode: string, count: number = 20): Quest
   const shuffled = [...stateQuestions].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 };
+
+/** Deterministic set of questions per calendar day (same for everyone in that state on that day). */
+export const getDailyChallengeQuestions = (stateCode: string, count: number = 5): Question[] => {
+  const pool = getQuestionsByState(stateCode);
+  if (pool.length === 0) return [];
+  const day = new Date().toISOString().slice(0, 10);
+  let seed = 0;
+  for (let i = 0; i < day.length; i++) {
+    seed = (seed * 31 + day.charCodeAt(i)) >>> 0;
+  }
+  const scored = pool.map((q, idx) => {
+    let h = seed ^ idx;
+    for (let c = 0; c < q.id.length; c++) {
+      h = (h * 31 + q.id.charCodeAt(c)) >>> 0;
+    }
+    return { q, h };
+  });
+  scored.sort((a, b) => a.h - b.h);
+  return scored.slice(0, Math.min(count, scored.length)).map((s) => s.q);
+};

@@ -1,14 +1,5 @@
-import { Platform } from 'react-native';
 import { getSetting } from './database';
-
-// For Android emulator: use 10.0.2.2 (special alias for host machine)
-// For iOS simulator and web: use localhost
-const getApiBaseUrl = () => {
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:8888';
-  }
-  return 'http://localhost:8888';
-};
+import { getApiBaseUrl } from './api-config';
 
 const API_BASE_URL = getApiBaseUrl();
 

@@ -63,6 +63,9 @@ export default function RootLayout() {
           <Stack.Screen name="report/[testId]" options={{ ...headerStyle, title: 'Test Report' }} />
           <Stack.Screen name="progress" options={{ ...headerStyle, title: 'Progress' }} />
           <Stack.Screen name="bookmarks" options={{ ...headerStyle, title: 'Bookmarks' }} />
+          <Stack.Screen name="daily-challenge" options={{ ...headerStyle, title: 'Daily challenge' }} />
+          <Stack.Screen name="wrong-answers" options={{ ...headerStyle, title: 'Missed questions' }} />
+          <Stack.Screen name="exam-settings" options={{ ...headerStyle, title: 'Exam date' }} />
           <Stack.Screen name="study-plan" options={{ ...headerStyle, title: 'Study Plan' }} />
           <Stack.Screen name="privacy-policy" options={{ ...headerStyle, title: 'Privacy Policy' }} />
           <Stack.Screen name="profile/edit-profile" options={{ ...headerStyle, title: 'Edit Profile' }} />

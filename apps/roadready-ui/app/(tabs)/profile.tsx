@@ -454,7 +454,7 @@ export default function ProfileScreen() {
         <ThemedView style={[styles.card, { backgroundColor: Colors[currentScheme].cardBackground }]}>
           <ThemedView style={styles.cardHeader}>
             <ThemedText type="subtitle">Recent Tests</ThemedText>
-            <TouchableOpacity onPress={() => router.push('/statistics')}>
+            <TouchableOpacity onPress={() => router.push('/profile/statistics')}>
               <ThemedText style={styles.viewAllText}>View All</ThemedText>
             </TouchableOpacity>
           </ThemedView>
@@ -576,6 +576,28 @@ export default function ProfileScreen() {
               <Ionicons name="lock-closed" size={24} color="#E91E63" />
             </ThemedView>
             <ThemedText style={styles.actionText}>Password</ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/exam-settings' as any)}
+            activeOpacity={0.7}
+          >
+            <ThemedView style={[styles.actionIcon, { backgroundColor: '#E0F2FE' }]}>
+              <Ionicons name="calendar" size={24} color="#0284C7" />
+            </ThemedView>
+            <ThemedText style={styles.actionText}>Exam date</ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/wrong-answers' as any)}
+            activeOpacity={0.7}
+          >
+            <ThemedView style={[styles.actionIcon, { backgroundColor: '#F3E8FF' }]}>
+              <Ionicons name="school" size={24} color="#7C3AED" />
+            </ThemedView>
+            <ThemedText style={styles.actionText}>Missed</ThemedText>
           </TouchableOpacity>
         </ThemedView>
       </ThemedView>

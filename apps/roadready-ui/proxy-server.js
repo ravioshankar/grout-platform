@@ -4,7 +4,10 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
 const PORT = 3000;
-const API_URL = 'http://127.0.0.1:8888';
+const API_URL =
+  process.env.EXPO_PUBLIC_API_URL ||
+  process.env.API_PROXY_TARGET ||
+  'http://127.0.0.1:8888';
 
 app.use(cors());
 

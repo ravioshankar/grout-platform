@@ -94,6 +94,45 @@ export const removeBookmark = async (questionId: string) => {
   await remove('bookmarks', questionId);
 };
 
+export const recordWrongAnswer = async (question: {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  category: string;
+  stateCode: string;
+  explanation?: string;
+}) => {
+  const now = Date.now();
+  await put('wrong_answers', {
+    ...question,
+    updated_at: now,
+  });
+};
+
+export const getWrongAnswers = async () => {
+  const rows = await getAll<any>('wrong_answers');
+  return rows
+    .sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0))
+    .map((b: any) => ({
+      id: b.id,
+      question: b.question,
+      options: b.options,
+      correctAnswer: b.correctAnswer,
+      category: b.category,
+      stateCode: b.stateCode,
+      explanation: b.explanation,
+    }));
+};
+
+export const removeWrongAnswer = async (questionId: string) => {
+  await remove('wrong_answers', questionId);
+};
+
+export const clearWrongAnswers = async () => {
+  await clear('wrong_answers');
+};
+
 export const saveSetting = async (key: string, value: string) => {
   try {
     const now = Date.now();
@@ -148,6 +187,7 @@ export const clearAllData = async () => {
   await clear('user_profile');
   await clear('test_records');
   await clear('bookmarks');
+  await clear('wrong_answers');
   await clear('study_plan');
   await clear('settings');
 };

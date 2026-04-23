@@ -9,6 +9,7 @@ import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
 import { saveSetting } from '@/utils/database';
 import { apiClient } from '@/utils/api-client';
+import { getApiBaseUrl } from '@/utils/api-config';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
@@ -49,8 +50,7 @@ export default function LoginScreen() {
 
   const handleOAuthLogin = async (provider: 'google' | 'facebook') => {
     try {
-      const baseUrl = 'http://localhost:8888';
-      const url = `${baseUrl}/api/v1/auth/login/${provider}`;
+      const url = `${getApiBaseUrl()}/api/v1/auth/login/${provider}`;
       await Linking.openURL(url);
       setError('OAuth login requires web browser. Please use email/password for mobile.');
     } catch (error) {

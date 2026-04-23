@@ -66,6 +66,17 @@ export const initDatabase = async () => {
       created_at INTEGER NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS wrong_answers (
+      id TEXT PRIMARY KEY,
+      question TEXT NOT NULL,
+      options TEXT NOT NULL,
+      correct_answer INTEGER NOT NULL,
+      category TEXT NOT NULL,
+      state_code TEXT NOT NULL,
+      explanation TEXT,
+      updated_at INTEGER NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS study_plan (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       day INTEGER NOT NULL,
@@ -283,6 +294,68 @@ export const removeBookmark = async (questionId: string) => {
   await database.runAsync('DELETE FROM bookmarks WHERE id = ?', [questionId]);
 };
 
+export const recordWrongAnswer = async (question: {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  category: string;
+  stateCode: string;
+  explanation?: string;
+}) => {
+  return queueDbOperation(async () => {
+    const database = getDatabase();
+    const now = Date.now();
+    await database.runAsync(
+      `INSERT OR REPLACE INTO wrong_answers (
+        id, question, options, correct_answer, category, state_code, explanation, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        question.id,
+        question.question,
+        JSON.stringify(question.options),
+        question.correctAnswer,
+        question.category,
+        question.stateCode,
+        question.explanation ?? null,
+        now,
+      ]
+    );
+  });
+};
+
+export const getWrongAnswers = async () => {
+  return queueDbOperation(async () => {
+    const database = getDatabase();
+    const rows = await database.getAllAsync<any>(
+      'SELECT * FROM wrong_answers ORDER BY updated_at DESC'
+    );
+    return rows.map((b: any) => ({
+      id: b.id,
+      question: b.question,
+      options: JSON.parse(b.options),
+      correctAnswer: b.correct_answer,
+      category: b.category,
+      stateCode: b.state_code,
+      explanation: b.explanation,
+    }));
+  });
+};
+
+export const removeWrongAnswer = async (questionId: string) => {
+  return queueDbOperation(async () => {
+    const database = getDatabase();
+    await database.runAsync('DELETE FROM wrong_answers WHERE id = ?', [questionId]);
+  });
+};
+
+export const clearWrongAnswers = async () => {
+  return queueDbOperation(async () => {
+    const database = getDatabase();
+    await database.runAsync('DELETE FROM wrong_answers');
+  });
+};
+
 export const saveSetting = async (key: string, value: string) => {
   return queueDbOperation(async () => {
     try {
@@ -374,6 +447,19 @@ export const runMigrations = async () => {
         updated_at INTEGER NOT NULL
       );
     `);
+
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS wrong_answers (
+        id TEXT PRIMARY KEY,
+        question TEXT NOT NULL,
+        options TEXT NOT NULL,
+        correct_answer INTEGER NOT NULL,
+        category TEXT NOT NULL,
+        state_code TEXT NOT NULL,
+        explanation TEXT,
+        updated_at INTEGER NOT NULL
+      );
+    `);
     
     console.log('Migrations completed successfully');
     return true;
@@ -389,6 +475,7 @@ export const clearAllData = async () => {
     DELETE FROM user_profile;
     DELETE FROM test_records;
     DELETE FROM bookmarks;
+    DELETE FROM wrong_answers;
     DELETE FROM study_plan;
     DELETE FROM settings;
   `);

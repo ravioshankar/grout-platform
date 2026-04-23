@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator, View } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -9,12 +9,20 @@ import { DailyGoal } from '@/components/daily-goal';
 import { EmailVerificationBanner } from '@/components/email-verification-banner';
 import { StreakCard } from '@/components/streak-card';
 import { getTestResults } from '@/utils/storage';
-import { getUserProfile, getSetting } from '@/utils/database';
+import {
+  initDatabase,
+  runMigrations,
+  getUserProfile,
+  getSetting,
+} from '@/utils/database';
+import { apiClient } from '@/utils/api-client';
+import { useIsOffline } from '@/hooks/use-is-offline';
+import { computeReadinessScore } from '@/utils/readiness-score';
+import { EXAM_TARGET_DATE_KEY, formatExamCountdown } from '@/utils/exam-date';
 import { TestResult } from '@/constants/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/contexts/theme-context';
 import { Colors } from '@/constants/theme';
-import { initDatabase, runMigrations } from '@/utils/database';
 import { SetupPromptCard } from '@/components/setup-prompt-card';
 
 export default function HomeScreen() {
@@ -25,16 +33,19 @@ export default function HomeScreen() {
   const [emailVerified, setEmailVerified] = useState(true);
   const [streakData, setStreakData] = useState({ currentStreak: 0, longestStreak: 0, totalXP: 0, level: 1 });
   const [needsSetup, setNeedsSetup] = useState(false);
+  const [examLine, setExamLine] = useState<string | null>(null);
+  const offline = useIsOffline();
   const { isDark } = useTheme();
   const currentScheme = isDark ? 'dark' : 'light';
 
   const stats = useMemo(() => {
-    if (testResults.length === 0) return { totalTests: 0, averageScore: 0, bestScore: 0, passRate: 0 };
+    if (testResults.length === 0) return { totalTests: 0, averageScore: 0, bestScore: 0, passRate: 0, readiness: 0 };
     const totalTests = testResults.length;
     const averageScore = Math.round(testResults.reduce((sum, r) => sum + r.score, 0) / totalTests);
     const bestScore = Math.max(...testResults.map(r => r.score));
     const passRate = Math.round(testResults.filter(r => r.score >= 70).length / totalTests * 100);
-    return { totalTests, averageScore, bestScore, passRate };
+    const readiness = computeReadinessScore(averageScore, passRate, totalTests);
+    return { totalTests, averageScore, bestScore, passRate, readiness };
   }, [testResults]);
 
   const recentTest = useMemo(() => 
@@ -49,6 +60,9 @@ export default function HomeScreen() {
         await runMigrations();
         setDbInitialized(true);
         await loadDashboardData();
+
+        const examIso = await getSetting(EXAM_TARGET_DATE_KEY);
+        setExamLine(formatExamCountdown(examIso));
         
         const authToken = await getSetting('auth_token');
         if (authToken) {
@@ -95,14 +109,18 @@ export default function HomeScreen() {
     const { syncTestRecords } = await import('@/utils/sync');
     await syncTestRecords();
     await loadDashboardData();
+    const examIso = await getSetting(EXAM_TARGET_DATE_KEY);
+    setExamLine(formatExamCountdown(examIso));
     setRefreshing(false);
   }, [loadDashboardData]);
 
   const quickActions = [
     { id: 'practice', title: 'Quick Practice', icon: 'book', color: '#F59E0B', route: '/categories' },
+    { id: 'daily', title: 'Daily challenge', icon: 'today', color: '#FF9800', route: '/daily-challenge' },
     { id: 'test', title: 'Full Test', icon: 'document-text', color: '#16A34A', route: '/setup' },
     { id: 'progress', title: 'My Progress', icon: 'analytics', color: '#F59E0B', route: '/progress' },
-    { id: 'bookmarks', title: 'Bookmarks', icon: 'bookmark', color: '#DC2626', route: '/bookmarks' }
+    { id: 'bookmarks', title: 'Bookmarks', icon: 'bookmark', color: '#DC2626', route: '/bookmarks' },
+    { id: 'missed', title: 'Missed', icon: 'school', color: '#7C3AED', route: '/wrong-answers' },
   ];
 
   if (isLoading) {
@@ -123,7 +141,37 @@ export default function HomeScreen() {
       }
     >
       <AppHeader title="Home" />
+      {offline && (
+        <View
+          style={{
+            marginHorizontal: 16,
+            marginTop: 8,
+            padding: 12,
+            borderRadius: 10,
+            backgroundColor: isDark ? '#422006' : '#FEF3C7',
+          }}
+        >
+          <ThemedText style={{ color: isDark ? '#FCD34D' : '#92400E', fontWeight: '600' }}>
+            You are offline. Practice still works; sync runs again when you are online.
+          </ThemedText>
+        </View>
+      )}
       <EmailVerificationBanner emailVerified={emailVerified} />
+
+      {examLine && (
+        <TouchableOpacity
+          style={[styles.examBanner, { backgroundColor: Colors[currentScheme].cardBackground, borderColor: Colors[currentScheme].border }]}
+          onPress={() => router.push('/exam-settings' as any)}
+          activeOpacity={0.75}
+        >
+          <Ionicons name="calendar-outline" size={22} color="#0284C7" />
+          <ThemedView style={{ flex: 1, marginLeft: 12, backgroundColor: 'transparent' }}>
+            <ThemedText type="defaultSemiBold">{examLine}</ThemedText>
+            <ThemedText style={{ fontSize: 12, opacity: 0.7, marginTop: 2 }}>Tap to change exam date</ThemedText>
+          </ThemedView>
+          <Ionicons name="chevron-forward" size={20} color={Colors[currentScheme].icon} />
+        </TouchableOpacity>
+      )}
 
       {/* Setup Prompt */}
       {needsSetup && <SetupPromptCard />}
@@ -161,6 +209,11 @@ export default function HomeScreen() {
               <Ionicons name="document-text" size={24} color="#DC2626" />
               <ThemedText style={styles.statNumber}>{stats.totalTests}</ThemedText>
               <ThemedText style={styles.statLabel}>Tests Taken</ThemedText>
+            </ThemedView>
+            <ThemedView style={[styles.statCard, { backgroundColor: Colors[currentScheme].cardBackground, borderColor: Colors[currentScheme].border }]}>
+              <Ionicons name="pulse" size={24} color="#7C3AED" />
+              <ThemedText style={styles.statNumber}>{stats.readiness}%</ThemedText>
+              <ThemedText style={styles.statLabel}>Readiness</ThemedText>
             </ThemedView>
           </ThemedView>
         </ThemedView>
@@ -294,12 +347,24 @@ const styles = StyleSheet.create({
   },
   statsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: 12,
     backgroundColor: 'transparent',
   },
+  examBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
   statCard: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: '45%',
+    minWidth: '42%',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',

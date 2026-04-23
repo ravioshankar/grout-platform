@@ -33,7 +33,11 @@ export default function ExploreScreen() {
       description: 'Get personalized study recommendations',
       icon: 'chatbubble-ellipses',
       color: '#4CAF50',
-      action: () => showAlert('AI Tutor', 'Your AI study buddy analyzes your performance and suggests focus areas!')
+      action: () =>
+        showAlert('Study tips', 'Open Statistics to see weak areas, then use category practice and Missed questions on Home to focus. Full AI coaching can plug in here later.', [
+          { text: 'Statistics', onPress: () => router.push('/profile/statistics' as any) },
+          { text: 'OK', style: 'cancel' },
+        ]),
     },
     {
       id: 'challenges',
@@ -41,7 +45,7 @@ export default function ExploreScreen() {
       description: 'Complete daily driving challenges',
       icon: 'trophy',
       color: '#FF9800',
-      action: () => showAlert('Daily Challenge', 'Today: Master parking rules in 5 questions!')
+      action: () => router.push('/daily-challenge' as any),
     },
     {
       id: 'community',
