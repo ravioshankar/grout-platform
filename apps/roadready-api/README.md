@@ -8,11 +8,42 @@ FastAPI backend for RoadReady DMV application.
 pip install -r requirements.txt
 ```
 
+## Docker (recommended on Linux / Ubuntu)
+
+From `apps/roadready-api`, build and run the API and PostgreSQL together:
+
+```bash
+./docker-up.sh
+```
+
+That uses **`docker compose`** when available (Docker Desktop), otherwise **`docker-compose`**. If you see `unknown flag: --build`, your `docker` CLI does not include Compose V2—install [Docker Desktop](https://www.docker.com/products/docker-desktop/) or run `brew install docker-compose` and use:
+
+```bash
+docker-compose up --build -d
+```
+
+Manual equivalents:
+
+```bash
+docker compose up --build -d
+```
+
+- Swagger: http://localhost:8888/docs  
+- Postgres is also exposed on **localhost:5433** for GUI clients (optional).
+
+Set a real secret in production:
+
+```bash
+export SECRET_KEY="$(openssl rand -base64 32)"
+./docker-up.sh
+```
+
 ## Database Setup
 
-**Start PostgreSQL 16:**
+**PostgreSQL only (API still on host):**
 ```bash
-docker-compose up -d
+docker compose up -d postgres
+# or: docker-compose up -d postgres
 ```
 
 **Prisma-like commands:**
@@ -33,9 +64,14 @@ See [docs/OAUTH_SETUP.md](docs/OAUTH_SETUP.md) for Google and Facebook OAuth con
 
 ## Run
 
+**Local (Python on your machine):**
 ```bash
+./start-server.sh
+# or
 ./roadready start
 ```
+
+**In Docker:** use `docker compose up` (see above); the container runs migrations then starts Uvicorn (no `--reload`).
 
 ## Commands
 

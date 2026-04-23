@@ -14,10 +14,12 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
+# allow_credentials=True is incompatible with allow_origins=["*"] (browser blocks → fetch "Failed to fetch").
+# JWT is sent via Authorization header; cookies are not required for this API.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],

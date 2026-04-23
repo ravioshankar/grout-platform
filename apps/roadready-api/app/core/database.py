@@ -36,5 +36,18 @@ def get_db():
             session.rollback()
             raise
 
+
+def _import_orm_models() -> None:
+    """Import table models so they register on SQLModel.metadata before create_all."""
+    import app.models.user  # noqa: F401
+    import app.models.session  # noqa: F401
+    import app.models.password_reset  # noqa: F401
+    import app.models.email_verification  # noqa: F401
+    import app.models.onboarding_profile  # noqa: F401
+    import app.models.test_record  # noqa: F401
+    import app.models.marketplace  # noqa: F401
+
+
 def init_db():
+    _import_orm_models()
     SQLModel.metadata.create_all(engine)

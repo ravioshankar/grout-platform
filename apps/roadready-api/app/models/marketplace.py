@@ -2,8 +2,7 @@ from sqlmodel import SQLModel, Field, Column
 from datetime import datetime
 from typing import Optional, List
 from decimal import Decimal
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy import Text
+from sqlalchemy import Text, JSON
 
 class PartnerProduct(SQLModel, table=True):
     __tablename__ = "partner_product"
@@ -30,7 +29,7 @@ class UserListing(SQLModel, table=True):
     price: Decimal = Field(max_digits=10, decimal_places=2)
     category: str = Field(max_length=50, index=True)
     condition: str = Field(max_length=20)
-    images: Optional[List] = Field(default=None, sa_column=Column(JSONB))
+    images: Optional[List] = Field(default=None, sa_column=Column(JSON))
     location_city: Optional[str] = Field(default=None, max_length=100)
     location_state: Optional[str] = Field(default=None, max_length=2)
     status: str = Field(default="active", max_length=20, index=True)
