@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedAlert } from '@/components/themed-alert';
 import { AppHeader } from '@/components/app-header';
+import { LearnModeToggle } from '@/components/learn-mode-toggle';
 import { getQuestionsByCategory } from '@/constants/questions';
 import { QuestionCategory, TestResult } from '@/constants/types';
 import { saveTestResult } from '@/utils/storage';
@@ -25,6 +26,9 @@ export default function PracticeScreen() {
   
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
+
+  // Learn Mode State
+  const [learnModeEnabled, setLearnModeEnabled] = useState(false);
   const [score, setScore] = useState(0);
   const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set());
   const [startTime] = useState(Date.now());
@@ -38,7 +42,16 @@ export default function PracticeScreen() {
     
     setSelectedAnswer(answerIndex);
     setShowExplanation(true);
-    
+
+    // Show hint in learn mode before revealing answer
+    if (learnModeEnabled && !isCorrectForCurrentQuestion()) {
+      showAlert(
+        'Hint!',
+        'Look for keywords related to traffic signs and signals.',
+        [{ text: 'Got it!', onPress: () => hideAlert() }]
+      );
+    }
+
     const correct = answerIndex === questions[currentQuestion].correctAnswer;
     if (correct) {
       setScore(score + 1);
@@ -137,6 +150,12 @@ export default function PracticeScreen() {
     }
   };
 
+  // Helper to check if current answer is correct (before answering)
+  const isCorrectForCurrentQuestion = (): boolean => {
+    return selectedAnswer !== null && 
+           selectedAnswer === questions[currentQuestion].correctAnswer;
+  };
+
   if (questions.length === 0) {
     return (
       <ThemedView style={styles.container}>
@@ -156,6 +175,9 @@ export default function PracticeScreen() {
         <ThemedText>Question {currentQuestion + 1} of {questions.length}</ThemedText>
         <ThemedText>Score: {score}/{answeredQuestions.size}</ThemedText>
       </ThemedView>
+
+      {/* Learn Mode Toggle */}
+      <LearnModeToggle state={learnModeEnabled ? 'on-hint-only' : 'off'} onToggle={setLearnModeEnabled} />
 
       <ThemedView style={[styles.questionContainer, { backgroundColor: Colors[currentScheme].cardBackground }]}>
         <ThemedText type="defaultSemiBold" style={styles.question}>
