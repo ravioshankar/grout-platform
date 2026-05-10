@@ -3,53 +3,52 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class EmailService:
     """Email service for sending verification and notification emails"""
     
     @staticmethod
-    async def send_verification_email(email: str, token: str, base_url: str = "http://localhost:8888") -> bool:
+    async def send_verification_email(email: str, token: str, base_url: str = "http://localhost:8888") -> dict:
         """Send email verification link"""
         verification_link = f"{base_url}/api/v1/auth/verify-email?token={token}"
         
-        # TODO: Integrate with actual email service (SendGrid, AWS SES, etc.)
-        logger.info(f"Sending verification email to {email}")
-        logger.info(f"Verification link: {verification_link}")
+        logger.info(f"EMAIL_VERIFICATION | to={email} | link={verification_link}")
         
-        # For now, just log the link (in production, send actual email)
-        print(f"\n{'='*60}")
-        print(f"EMAIL VERIFICATION")
-        print(f"To: {email}")
-        print(f"Link: {verification_link}")
-        print(f"{'='*60}\n")
+        # TODO: Integrate with actual email service (SendGrid, AWS SES, Mailgun)
+        # Example: await sendgrid_client.send(...)
         
-        return True
+        return {
+            "status": "sent",
+            "link": verification_link,
+            "email": email
+        }
     
     @staticmethod
-    async def send_password_reset_email(email: str, token: str, base_url: str = "http://localhost:8888") -> bool:
+    async def send_password_reset_email(email: str, token: str, base_url: str = "http://localhost:8888") -> dict:
         """Send password reset link"""
         reset_link = f"{base_url}/api/v1/auth/reset-password?token={token}"
         
+        logger.info(f"PASSWORD_RESET | to={email} | link={reset_link}")
+        
         # TODO: Integrate with actual email service
-        logger.info(f"Sending password reset email to {email}")
-        logger.info(f"Reset link: {reset_link}")
         
-        print(f"\n{'='*60}")
-        print(f"PASSWORD RESET")
-        print(f"To: {email}")
-        print(f"Link: {reset_link}")
-        print(f"{'='*60}\n")
-        
-        return True
+        return {
+            "status": "sent",
+            "link": reset_link,
+            "email": email
+        }
     
     @staticmethod
-    async def send_welcome_email(email: str, first_name: Optional[str] = None) -> bool:
+    async def send_welcome_email(email: str, first_name: Optional[str] = None) -> dict:
         """Send welcome email to new users"""
-        logger.info(f"Sending welcome email to {email}")
+        greet = f"Welcome {'to RoadReady' if not first_name else first_name + ' to RoadReady'}!"
         
-        print(f"\n{'='*60}")
-        print(f"WELCOME EMAIL")
-        print(f"To: {email}")
-        print(f"Welcome {'to RoadReady' if not first_name else first_name + ' to RoadReady'}!")
-        print(f"{'='*60}\n")
+        logger.info(f"WELCOME_EMAIL | to={email} | user={first_name}")
         
-        return True
+        # TODO: Integrate with actual email service
+        
+        return {
+            "status": "sent",
+            "message": greet,
+            "email": email
+        }

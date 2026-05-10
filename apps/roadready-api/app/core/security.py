@@ -4,6 +4,7 @@ from jose import JWTError, jwt
 import bcrypt
 import hashlib
 import secrets
+import logging
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session, select
@@ -12,17 +13,26 @@ from app.core.database import get_db
 from app.models.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+logger = logging.getLogger(__name__)
+
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify password against hash."""
     return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
+
 def get_password_hash(password: str) -> str:
+    """Hash password using bcrypt."""
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
+
 def hash_token(token: str) -> str:
+    """Hash token for storage (SHA256)."""
     return hashlib.sha256(token.encode()).hexdigest()
 
-def create_tokens(user_id: int, db: Session, request: Request = None) -> Tuple[str, str]:
+
+async def create_tokens(user_id: int, db: Session, request: Request = None) -> Tuple[str, str]:
+    """Create access and refresh tokens with session tracking."""
     from app.models.session import Session as SessionModel
     
     session_id = SessionModel.generate_session_id()
@@ -47,8 +57,12 @@ def create_tokens(user_id: int, db: Session, request: Request = None) -> Tuple[s
     ip_address = None
     user_agent = None
     if request:
-        ip_address = request.client.host if request.client else None
-        user_agent = request.headers.get("user-agent")
+        from fastapi.requests import Request as FastAPIRequest
+        try:
+            ip_address = getattr(request, 'client', None) and getattr(request.client, 'host', None) if hasattr(request, 'client') else None
+            user_agent = getattr(request, 'headers', None) and request.headers.get('user-agent') if hasattr(request, 'headers') else None
+        except Exception as e:
+            logger.warning(f"Could not extract request info: {e}")
     
     session = SessionModel(
         user_id=user_id,
@@ -59,11 +73,18 @@ def create_tokens(user_id: int, db: Session, request: Request = None) -> Tuple[s
         ip_address=ip_address,
         user_agent=user_agent,
     )
+    
     db.add(session)
+    db.commit()
+    db.refresh(session)
+    
+    logger.info(f"SESSION_CREATED | user_id={user_id} | session_id={session_id[:8]}...")
     
     return access_token, refresh_token
 
+
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+    """Validate JWT token and return current user."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or expired token",
@@ -77,21 +98,19 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         token_type: str = payload.get("type")
         
         if not user_id or not session_id or token_type != "access":
-            print(f"Token validation failed: user_id={user_id}, session_id={session_id}, type={token_type}")
+            logger.warning(f"Token validation failed: user_id={user_id}, session_id={session_id}, type={token_type}")
             raise credentials_exception
         
         # Validate user_id is numeric
         try:
             int(user_id)
         except (ValueError, TypeError):
-            print(f"Invalid user_id format: {user_id}")
+            logger.warning(f"Invalid user_id format: {user_id}")
             raise credentials_exception
             
     except JWTError as e:
-        print(f"JWT decode error: {e}")
+        logger.error(f"JWT decode error: {e}")
         raise credentials_exception
-    
-    from app.models.session import Session as SessionModel
     
     token_hash = hash_token(token)
     session = db.exec(select(SessionModel).where(
@@ -104,10 +123,12 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     )).first()
     
     if not session:
+        logger.warning(f"Session not found for token | user_id={user_id} | session_id={session_id}")
         raise credentials_exception
     
     inactivity_limit = datetime.utcnow() - timedelta(hours=settings.SESSION_INACTIVITY_HOURS)
     if session.last_activity < inactivity_limit:
+        logger.warning(f"Session expired due to inactivity | session_id={session_id} | last_activity={session.last_activity}")
         session.is_active = False
         session.revoked_at = datetime.utcnow()
         db.add(session)
@@ -122,11 +143,14 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     
     user = db.get(User, int(user_id))
     if not user or not user.is_active:
+        logger.warning(f"Inactive user found for token | user_id={user_id}")
         raise credentials_exception
     
     return user
 
+
 def revoke_session(session_id: str, db: Session):
+    """Revoke a specific session."""
     from app.models.session import Session as SessionModel
     session = db.exec(select(SessionModel).where(
         SessionModel.session_id == session_id,
@@ -134,11 +158,14 @@ def revoke_session(session_id: str, db: Session):
     )).first()
     
     if session:
+        logger.info(f"SESSION_REVOKED | session_id={session_id}")
         session.is_active = False
         session.revoked_at = datetime.utcnow()
         db.add(session)
 
+
 def revoke_all_user_sessions(user_id: int, db: Session, except_session_id: str = None):
+    """Revoke all sessions for a user except one (for current session)."""
     from app.models.session import Session as SessionModel
     sessions = db.exec(select(SessionModel).where(
         SessionModel.user_id == user_id,
@@ -148,6 +175,8 @@ def revoke_all_user_sessions(user_id: int, db: Session, except_session_id: str =
     for session in sessions:
         if except_session_id and session.session_id == except_session_id:
             continue
+        
+        logger.info(f"SESSION_REVOKED (ALL) | user_id={user_id} | session_id={session.session_id[:8]}...")
         session.is_active = False
         session.revoked_at = datetime.utcnow()
         db.add(session)

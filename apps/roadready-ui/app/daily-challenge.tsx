@@ -257,9 +257,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  selectedOption: { borderColor: '#F59E0B' },
-  correctOption: { borderColor: '#16A34A' },
-  incorrectOption: { borderColor: '#DC2626' },
+  selectedOption: { padding: 16, marginBottom: 12, borderRadius: 8, borderWidth: 2, borderColor: '#F59E0B' },
+  correctOption: { padding: 16, marginBottom: 12, borderRadius: 8, borderWidth: 2, borderColor: '#16A34A' },
+  incorrectOption: { padding: 16, marginBottom: 12, borderRadius: 8, borderWidth: 2, borderColor: '#DC2626' },
   optionText: { fontSize: 16 },
   explanationContainer: {
     marginTop: 20,

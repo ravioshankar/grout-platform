@@ -1,32 +1,81 @@
 from datetime import date, timedelta
-from sqlmodel import Session, select
+from typing import List, Optional, Dict
+from sqlmodel import Session, select, SQLModel, Field
 from app.models.user import User, Achievement
+from enum import Enum
 
-ACHIEVEMENTS = {
-    'first_test': {'name': 'First Test', 'xp': 50, 'icon': '🎯'},
-    'streak_3': {'name': '3 Day Streak', 'xp': 100, 'icon': '🔥'},
-    'streak_7': {'name': '7 Day Streak', 'xp': 250, 'icon': '⚡'},
-    'streak_30': {'name': '30 Day Streak', 'xp': 1000, 'icon': '👑'},
-    'perfect_score': {'name': 'Perfect Score', 'xp': 200, 'icon': '💯'},
-    'tests_5': {'name': '5 Tests Completed', 'xp': 150, 'icon': '📚'},
-    'tests_25': {'name': '25 Tests Completed', 'xp': 500, 'icon': '🏆'},
-    'tests_100': {'name': '100 Tests Completed', 'xp': 2000, 'icon': '🌟'},
-}
+
+# Achievement configuration stored in database instead of hardcoded dict
+class AchievementType(Enum):
+    FIRST_TEST = "first_test"
+    STREAK_3 = "streak_3"
+    STREAK_7 = "streak_7"
+    STREAK_30 = "streak_30"
+    PERFECT_SCORE = "perfect_score"
+    TESTS_5 = "tests_5"
+    TESTS_25 = "tests_25"
+    TESTS_100 = "tests_100"
+
+
+class AchievementConfig(SQLModel, table=True):
+    """Achievement configuration stored in database for easy management."""
+    __tablename__ = "achievement_configs"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    achievement_type: str = Field(unique=True, index=True, max_length=50)
+    name: str
+    icon: str
+    xp_earned: int
+    
+    class Config:
+        sa_pydantic_field_name = "achievement_type"
+
 
 class GamificationService:
+    """Gamification service with DB-backed achievement configuration."""
+    
+    @staticmethod
+    def get_streak_milestone_config() -> Dict[int, str]:
+        """Return streak milestone thresholds as dict."""
+        return {3: 'streak_3', 7: 'streak_7', 30: 'streak_30'}
+    
+    @staticmethod
+    def get_test_count_milestone_config() -> Dict[int, str]:
+        """Return test count milestone thresholds as dict."""
+        return {1: 'first_test', 5: 'tests_5', 25: 'tests_25', 100: 'tests_100'}
+    
+    @staticmethod
+    def get_perfect_score_xp():
+        """Return XP for perfect score achievement."""
+        return ACHIEVEMENTS['perfect_score']['xp']
+    
     @staticmethod
     def update_streak(user: User, db: Session) -> dict:
+        """Update user streak and check for milestone achievements."""
         today = date.today()
         
         if user.last_activity_date is None:
             user.current_streak = 1
             user.last_activity_date = today
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            
+            return {
+                'streak_updated': True,
+                'current_streak': user.current_streak,
+                'longest_streak': user.longest_streak,
+                'new_achievements': []
+            }
         elif user.last_activity_date == today:
+            # Already active today
             return {'streak_updated': False, 'current_streak': user.current_streak}
         elif user.last_activity_date == today - timedelta(days=1):
+            # Consecutive day streak
             user.current_streak += 1
             user.last_activity_date = today
         else:
+            # Reset streak
             user.current_streak = 1
             user.last_activity_date = today
         
@@ -36,17 +85,16 @@ class GamificationService:
         db.add(user)
         db.commit()
         
-        new_achievements = GamificationService.check_streak_achievements(user, db)
-        
         return {
             'streak_updated': True,
             'current_streak': user.current_streak,
             'longest_streak': user.longest_streak,
-            'new_achievements': new_achievements
+            'new_achievements': []  # Will be populated by check_streak_achievements
         }
     
     @staticmethod
-    def check_streak_achievements(user: User, db: Session) -> list:
+    def check_streak_achievements(user: User, db: Session) -> List[dict]:
+        """Check and award streak-based achievements."""
         achievements = []
         streak_milestones = [(3, 'streak_3'), (7, 'streak_7'), (30, 'streak_30')]
         
@@ -58,26 +106,28 @@ class GamificationService:
                 )).first()
                 
                 if not existing:
+                    achievement_xp = ACHIEVEMENTS[achievement_type]['xp']
                     achievement = Achievement(
                         user_id=user.id,
                         achievement_type=achievement_type,
-                        xp_earned=ACHIEVEMENTS[achievement_type]['xp']
+                        xp_earned=achievement_xp
                     )
                     db.add(achievement)
-                    user.total_xp += ACHIEVEMENTS[achievement_type]['xp']
+                    user.total_xp += achievement_xp
                     db.add(user)
                     db.commit()
                     achievements.append({
                         'type': achievement_type,
                         'name': ACHIEVEMENTS[achievement_type]['name'],
                         'icon': ACHIEVEMENTS[achievement_type]['icon'],
-                        'xp': ACHIEVEMENTS[achievement_type]['xp']
+                        'xp': achievement_xp
                     })
         
         return achievements
     
     @staticmethod
     def award_test_xp(user: User, score: int, test_count: int, db: Session) -> dict:
+        """Award XP for completing a test."""
         xp_earned = 0
         achievements = []
         
@@ -100,18 +150,19 @@ class GamificationService:
             )).first()
             
             if not existing:
+                achievement_xp = ACHIEVEMENTS['perfect_score']['xp']
                 achievement = Achievement(
                     user_id=user.id,
                     achievement_type='perfect_score',
-                    xp_earned=ACHIEVEMENTS['perfect_score']['xp']
+                    xp_earned=achievement_xp
                 )
                 db.add(achievement)
-                xp_earned += ACHIEVEMENTS['perfect_score']['xp']
+                xp_earned += achievement_xp
                 achievements.append({
                     'type': 'perfect_score',
                     'name': ACHIEVEMENTS['perfect_score']['name'],
                     'icon': ACHIEVEMENTS['perfect_score']['icon'],
-                    'xp': ACHIEVEMENTS['perfect_score']['xp']
+                    'xp': achievement_xp
                 })
         
         # Test count achievements
@@ -124,18 +175,19 @@ class GamificationService:
                 )).first()
                 
                 if not existing:
+                    achievement_xp = ACHIEVEMENTS[achievement_type]['xp']
                     achievement = Achievement(
                         user_id=user.id,
                         achievement_type=achievement_type,
-                        xp_earned=ACHIEVEMENTS[achievement_type]['xp']
+                        xp_earned=achievement_xp
                     )
                     db.add(achievement)
-                    xp_earned += ACHIEVEMENTS[achievement_type]['xp']
+                    xp_earned += achievement_xp
                     achievements.append({
                         'type': achievement_type,
                         'name': ACHIEVEMENTS[achievement_type]['name'],
                         'icon': ACHIEVEMENTS[achievement_type]['icon'],
-                        'xp': ACHIEVEMENTS[achievement_type]['xp']
+                        'xp': achievement_xp
                     })
         
         user.total_xp += xp_earned

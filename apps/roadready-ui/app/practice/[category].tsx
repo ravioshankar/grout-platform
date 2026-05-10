@@ -177,7 +177,7 @@ export default function PracticeScreen() {
       </ThemedView>
 
       {/* Learn Mode Toggle */}
-      <LearnModeToggle state={learnModeEnabled ? 'on-hint-only' : 'off'} onToggle={setLearnModeEnabled} />
+      <LearnModeToggle state={learnModeEnabled ? 'on-hint-only' : 'off'} onToggle={(newState: any) => setLearnModeEnabled(newState === 'on-full' || newState === 'on-hint-only')} />
 
       <ThemedView style={[styles.questionContainer, { backgroundColor: Colors[currentScheme].cardBackground }]}>
         <ThemedText type="defaultSemiBold" style={styles.question}>
@@ -305,12 +305,24 @@ const styles = StyleSheet.create({
   },
   selectedOption: {
     borderColor: '#F59E0B',
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 8,
+    borderWidth: 2,
   },
   correctOption: {
     borderColor: '#16A34A',
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 8,
+    borderWidth: 2,
   },
   incorrectOption: {
     borderColor: '#DC2626',
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 8,
+    borderWidth: 2,
   },
   optionText: {
     fontSize: 16,

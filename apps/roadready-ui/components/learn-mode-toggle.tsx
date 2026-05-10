@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { StyleSheet, TouchableOpacity, ViewStyle, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
-import { useTheme } from '@/contexts/theme-context';
 
 export type LearnModeState = 'off' | 'on-hint-only' | 'on-full';
 
@@ -22,7 +21,7 @@ export function LearnModeToggle({ state, onToggle }: LearnModeToggleProps) {
 
   return (
     <View style={styles.container}>
-      <ThemedText type="body" style={styles.label}>
+      <ThemedText type="title" style={styles.label}>
         Learn Mode
       </ThemedText>
       
@@ -33,7 +32,7 @@ export function LearnModeToggle({ state, onToggle }: LearnModeToggleProps) {
         ]}
       >
         <View style={styles.toggleHandle}>
-          <ThemedText type="labelSmall" style={styles.handleText}>
+          <ThemedText type="title" style={styles.handleText}>
             {state === 'off' ? 'Off' : state === 'on-hint-only' ? 'Hints Only' : 'Full Help'}
           </ThemedText>
         </View>
@@ -44,12 +43,12 @@ export function LearnModeToggle({ state, onToggle }: LearnModeToggleProps) {
         onPress={() => onToggle?.(state === 'off' ? 'on-hint-only' : state === 'on-hint-only' ? 'on-full' : 'off')}
         activeOpacity={0.7}
       >
-        <ThemedText type="labelSmall" style={styles.buttonText}>
+        <ThemedText type="title" style={styles.buttonText}>
           {state === 'off' ? 'Enable Hints' : state === 'on-hint-only' ? 'Show Full Help' : 'Hide Help'}
         </ThemedText>
       </TouchableOpacity>
 
-      <ThemedText type="caption" style={styles.hintText}>
+      <ThemedText type="subtitle" style={styles.hintText}>
         Get help when stuck • Reveal explanations
       </ThemedText>
     </View>
@@ -74,6 +73,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 20,
     minWidth: 100,
+    borderWidth: 1,
+    marginHorizontal: 4,
   },
   toggleHandle: {
     width: 40,
@@ -83,6 +84,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minWidth: 40,
+    paddingVertical: 6,
   },
   handleText: {
     fontSize: 11,
@@ -99,6 +101,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#E5E7EB',
     minWidth: 100,
+    borderWidth: 1,
+    marginBottom: 4,
   },
   buttonPulse: {
     shadowColor: '#F59E0B',

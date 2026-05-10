@@ -14,12 +14,15 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
-# allow_credentials=True is incompatible with allow_origins=["*"] (browser blocks → fetch "Failed to fetch").
-# JWT is sent via Authorization header; cookies are not required for this API.
+# CORS Configuration - Now configurable via env var!
+# Production: Set CORS_ORIGINS in .env to specific origins instead of "*"
+cors_origins = settings.CORS_ORIGINS
+print(f"🌐 CORS configured with origins: {cors_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=cors_origins,
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
@@ -27,6 +30,7 @@ app.add_middleware(
 
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
+    """Performance monitoring middleware with timeout protection."""
     start_time = time.time()
     try:
         response = await asyncio.wait_for(call_next(request), timeout=60.0)
@@ -34,9 +38,8 @@ async def add_process_time_header(request: Request, call_next):
         response.headers["X-Process-Time"] = str(process_time)
         return response
     except asyncio.TimeoutError:
-        return {"error": "Request timeout"}
-
-app.include_router(api_router, prefix=settings.API_V1_STR)
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=504, content={"error": "Request timeout"})
 
 @app.get("/")
 async def root():

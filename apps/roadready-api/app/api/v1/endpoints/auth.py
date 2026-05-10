@@ -13,6 +13,8 @@ from app.schemas.user import Token, LoginRequest, UserRead, UserCreate
 from app.schemas.auth import SignupRequest, UserProfileUpdate, TokenResponse, ChangePasswordRequest, ChangeEmailRequest
 from app.core.config import settings
 import secrets
+import warnings
+import logging
 
 router = APIRouter()
 
@@ -48,7 +50,7 @@ async def signup(signup_data: SignupRequest, request: Request, db: Session = Dep
     try:
         await EmailService.send_welcome_email(email)
     except Exception as e:
-        print(f"Failed to send welcome email: {e}")
+        logger.error(f"Failed to send welcome email: {e}")
     
     access_token, refresh_token = create_tokens(db_user.id, db, request)
     return {
@@ -111,8 +113,7 @@ async def login(login_data: LoginRequest, request: Request, db: Session = Depend
     },
 )
 async def get_me(request: Request, current_user: User = Depends(get_current_user)):
-    auth_header = request.headers.get("authorization")
-    print(f"Auth header received: {auth_header[:50] if auth_header else 'None'}...")
+    logger.debug(f"GET /api/v1/me | user_id={current_user.id} | email={current_user.email}")
     return current_user
 
 @router.post(
@@ -306,7 +307,7 @@ async def change_email(
 @router.post(
     "/send-verification-email",
     summary="Send verification email",
-    description="Send email verification link to user's email",
+    description="Send email verification link to user's email"
 )
 async def send_verification_email(
     request: Request,
@@ -326,16 +327,16 @@ async def send_verification_email(
         db.commit()
         
         base_url = str(request.base_url).rstrip('/')
-        await EmailService.send_verification_email(current_user.email, token, base_url)
+        result = await EmailService.send_verification_email(current_user.email, token, base_url)
         
-        return {"message": "Verification email sent"}
+        logger.info(f"VERIFICATION_EMAIL_SENT | user={current_user.email} | {result}")
+        
+        return {"message": "Verification email sent", **result}
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error sending verification email: {e}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Failed to send verification email: {str(e)}")
+        logger.error(f"Error sending verification email: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to send verification email")
 
 @router.get(
     "/verify-email",
@@ -363,11 +364,13 @@ async def verify_email(token: str, db: Session = Depends(get_db)):
 @router.get(
     "/login/{provider}",
     summary="OAuth login",
-    description="Initiate OAuth login with Google or Facebook",
+    description="Initiate OAuth login with Google or Facebook"
 )
 async def oauth_login(provider: str, request: Request):
     if provider not in ['google', 'facebook']:
         raise HTTPException(status_code=400, detail="Invalid provider")
+    
+    logger.info(f"OAuth login initiated | provider={provider}")
     
     redirect_uri = request.url_for('oauth_callback', provider=provider)
     return await oauth.create_client(provider).authorize_redirect(request, redirect_uri)
