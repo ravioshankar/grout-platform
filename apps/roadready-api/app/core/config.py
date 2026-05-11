@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
+import logging  # Import logging early for settings validation
 
 logger = logging.getLogger(__name__)
 

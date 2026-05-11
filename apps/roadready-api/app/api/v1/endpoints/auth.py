@@ -434,3 +434,6 @@ async def oauth_callback(provider: str, request: Request, db: Session = Depends(
     
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"OAuth authentication failed: {str(e)}")
+
+
+auth = router

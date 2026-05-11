@@ -51,3 +51,5 @@ async def get_gamification_stats(
         'total_xp': current_user.total_xp,
         'level': current_user.total_xp // 500 + 1
     }
+
+gamification = router

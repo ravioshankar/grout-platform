@@ -67,3 +67,5 @@ async def revoke_specific_session(
     revoke_session(session_id, db)
     
     return MessageResponse(message="Session revoked successfully")
+
+sessions = router

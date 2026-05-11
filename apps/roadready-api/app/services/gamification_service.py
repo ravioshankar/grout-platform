@@ -3,6 +3,19 @@ from typing import List, Optional, Dict
 from sqlmodel import Session, select, SQLModel, Field
 from app.models.user import User, Achievement
 from enum import Enum
+from fastapi import APIRouter
+
+# Default achievements - can be migrated to DB or added via admin panel
+ACHIEVEMENTS: Dict[str, dict] = {
+    'first_test': {'name': 'First Test', 'icon': '🎯', 'xp': 50},
+    'streak_3': {'name': '3-Day Streak', 'icon': '🔥', 'xp': 100},
+    'streak_7': {'name': 'Week Warrior', 'icon': '⚡', 'xp': 250},
+    'streak_30': {'name': 'Month Master', 'icon': '👑', 'xp': 1000},
+    'perfect_score': {'name': 'Perfect Score!', 'icon': '💯', 'xp': 500},
+    'tests_5': {'name': '5 Tests Done', 'icon': '✅', 'xp': 100},
+    'tests_25': {'name': 'Quarter Century', 'icon': '🎉', 'xp': 300},
+    'tests_100': {'name': 'Century Club', 'icon': '💪', 'xp': 750},
+}
 
 
 # Achievement configuration stored in database instead of hardcoded dict

@@ -91,3 +91,5 @@ async def get_test_record(
     if not test_record or test_record.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Test record not found")
     return test_record
+
+test_records = router

@@ -155,3 +155,5 @@ async def delete_profile(
     
     db.delete(profile)
     return None
+
+onboarding_profiles = router

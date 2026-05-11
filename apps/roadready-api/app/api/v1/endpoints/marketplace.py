@@ -216,3 +216,5 @@ async def get_categories():
             {"id": "free_stuff", "name": "Free Stuff", "icon": "🆓"}
         ]
     }
+
+marketplace = router

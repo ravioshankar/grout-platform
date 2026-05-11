@@ -183,3 +183,6 @@ async def reset_password(
     db.commit()
     
     return MessageResponse(message="Password reset successfully")
+
+
+email_verification = router

@@ -34,3 +34,5 @@ async def get_weak_areas(
 ) -> Dict[str, List[WeakArea]]:
     """Get list of categories where user is performing below threshold"""
     return StatisticsService.get_weak_areas(current_user.id, db, threshold)
+
+statistics = router
